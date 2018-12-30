@@ -21,19 +21,19 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 
 # [COURSE](http://web.stanford.edu/class/cs234/schedule.html)
 
-<h2><b> ♞ REINFORCEMENT LEARNING </b></h2>
+<h2><b> ♞ REINFORCEMENT LEARNING </b></h2> SB (Sutton and Barton) Chapters : SBC
 
-- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l1.pdf)]
-- How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l2.pdf)]
-- [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l3.pdf)]
-- [Model-free learning to make good decisions. Q-learning. SARSA.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture3.pdf), [Model Free Control](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture4.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l4.pdf)]
-- Scaling up: value function approximation. Deep Q Learning, [Value Function Approximation](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture5.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l5.pdf)]
-- [Deep reinforcement learning continued](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture6.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l6.pdf)]
-- [Imitation Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture7.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l7_annotated.pdf)]
-- Policy Search, [Policy Gradient](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture8.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l8.pdf)]
-- [Fast reinforcement learning (Exploration/Exploitation) Part I](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture11.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l9_updated.pdf)]
-- Fast reinforcement learning (Exploration/Exploitation) Part II [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l11.pdf)]
-- Batch Reinforcement Learning [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l12.pdf)]
+- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l1.pdf)] SBC1
+- How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l2.pdf)] SBC 3, 4.1-4.4
+- [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l3.pdf)] SBC 5.1, 5.5, 6.1-6.3
+- [Model-free learning to make good decisions. Q-learning. SARSA.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture3.pdf), [Model Free Control](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture4.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l4.pdf)] SBC 5.2, 5.4, 6.4-6.5, 6.7
+- Scaling up: value function approximation. Deep Q Learning, [Value Function Approximation](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture5.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l5.pdf)] SBC Chp 9.3, 9.6-9.7, 10.1, 11.1, 11.2, 11.3
+- [Deep reinforcement learning continued](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture6.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l6.pdf)] SBC 9.7
+- [Imitation Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture7.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l7_annotated.pdf)] 
+- Policy Search, [Policy Gradient](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture8.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l8.pdf)] SBC 13
+- [Fast reinforcement learning (Exploration/Exploitation) Part I](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture11.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l9_updated.pdf)] SBC Sections 2.1-2.7
+- Fast reinforcement learning (Exploration/Exploitation) Part II [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l11.pdf)] SBC Sections 2.1-2.7
+- Batch Reinforcement Learning [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l12.pdf)] 
 - [Monte Carlo Tree Search](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture14.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l13.pdf)]
 - Human in the loop RL with a focus on transfer learnign [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l14.pdf)]
 
@@ -42,6 +42,9 @@ The following guest lecture slides from last year's class offering may also help
 - Maximum Entropy Framework: Inverse RL, Soft Optimality, and More, Chelsea Finn and Sergey Levine. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_maxent_invrl.pdf)
 - Reinforcement Learning – Policy Optimization Pieter Abbeel. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_policy_gradients.pdf)
 - Safe Reinforcement Learning, Philip S. Thomas. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_safe_rl.pdf)
+
+##### Papers:
+
 - [Human-level control through deep reinforcement learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/DQNNaturePaper.pdf)
 - [Maximum Entropy Inverse Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/AAAI08-227.pdf)
 - [Apprenticeship Learning via Inverse Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/icml04-apprentice.pdf)
