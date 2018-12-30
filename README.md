@@ -18,7 +18,7 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 - [Homework 2](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment2/assignment2.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment2/solution2.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/assignment2)
 - [Homework 3](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment3/assignment3.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment3/assignment3_solution.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/assignment3)
 
-# COURSE
+# [COURSE](http://web.stanford.edu/class/cs234/schedule.html)
 
 <h2><b> ♞ REINFORCEMENT LEARNING </b></h2>
 
