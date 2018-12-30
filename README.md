@@ -4,8 +4,6 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 
 <img src="https://github.com/SKKSaikia/CS234_RL/blob/master/img/AIstan.jpg">
 
-- [Python Tutorial](http://cs231n.github.io/python-numpy-tutorial/) | []()
-
 <b> Book: </b>
 - [Reinforcement Learning: An Introduction](https://github.com/SKKSaikia/CS234_RL/blob/master/doc/SuttonBartoIPRLBook2ndEd.pdf), Sutton and Barto, 2nd Edition.
 - [Reinforcement Learning: State-of-the-Art](https://github.com/SKKSaikia/CS234_RL/blob/master/doc/RL.pdf), Marco Wiering and Martijn van Otterlo, Eds.
@@ -57,7 +55,7 @@ The following guest lecture slides from last year's class offering may also help
 
 #### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf)
 
-- [ICLR Result Reproducibility Challenge](https://www.cs.mcgill.ca/~jpineau/ICLR2018-ReproducibilityChallenge.html) | []()
+- [ICLR Result Reproducibility Challenge](https://www.cs.mcgill.ca/~jpineau/ICLR2018-ReproducibilityChallenge.html) | [Python Tutorial](http://cs231n.github.io/python-numpy-tutorial/)
 
 # FINAL PROJECT | [Past Projects](http://web.stanford.edu/class/cs234/project.html)
 
