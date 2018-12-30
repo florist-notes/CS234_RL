@@ -42,6 +42,11 @@ The following guest lecture slides from last year's class offering may also help
 - Maximum Entropy Framework: Inverse RL, Soft Optimality, and More, Chelsea Finn and Sergey Levine. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_maxent_invrl.pdf)
 - Reinforcement Learning – Policy Optimization Pieter Abbeel. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_policy_gradients.pdf)
 - Safe Reinforcement Learning, Philip S. Thomas. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_safe_rl.pdf)
+- [Human-level control through deep reinforcement learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/DQNNaturePaper.pdf)
+- [Maximum Entropy Inverse Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/AAAI08-227.pdf)
+- [Apprenticeship Learning via Inverse Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/icml04-apprentice.pdf)
+- [Monte-Carlo tree search and rapid action value estimation in computer Go](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/mcts-gelly-silver.pdf)
+- [Mastering the game of Go without human knowledge](https://www.nature.com/articles/nature24270)
 
 #### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf), [Midterm review](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_midterm_review.pdf)
 
