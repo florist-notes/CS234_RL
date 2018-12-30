@@ -1,0 +1,13 @@
+\newpage
+\textbf{\Large Question 5 -- Value Function Approximation \hfill [10 pts]}
+\vspace{0.5cm}
+
+\textbf{A)} No (Depends) it does not imply that an optimal policy has been found. 
+
+First let us consider the case when linear approximation is not able to represent the value function with our chosen set of features. In that case even if we have found the global minimum of the function that is represented by our function approximator, there is no guarantee that the extracted greedy policy corresponding to the current Q will be an optimal policy. 
+
+Secondly let us consider the case when the linear approximator is able to represent the value function with our chosen set of features. Then it may be the case that the Q value is still changing with iterations and hence the extracted greedy policy will not in general be an optimal policy, as it can change in future iterations. It may also be the case that we have converged to a local minimum and in that case although the extracted greedy policy will not change with future iterations, it may not be an optimal policy. The only case where the extracted greedy policy is guaranteed to be an optimal policy is if we have converged to a global minimum.
+
+\textbf{B)} I'd pick \textbf{D10}. First notice that \textbf{S100} and \textbf{D10} have the same number of parameters (in an order of magnitude sense). By Hornik's universal approximation theorem, we know that a single hidden layer can represent any continuous function. However the number of nodes needed can be extremely large. On the other hand, it has been observed that to represent the same function class one can reduce the number of nodes in each hidden layer while simultaneously increasing the number of hidden layers. Thus multiple hidden layers provide a more compact representation of the value function. This motivates our choice for \textbf{D10}, since the number of parameters in \textbf{S100} and \textbf{D10} are the same, and so we expect to be able to represent a larger function class with \textbf{D10}.
+
+The number of trainable parameters for each network are the same order of magnitude for S100 and D10, but are two orders of magnitude lower for S2.

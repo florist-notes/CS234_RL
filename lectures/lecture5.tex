@@ -1,0 +1,265 @@
+\documentclass{article}
+
+%%%%%%%%%%%%
+%% Config %%
+%%%%%%%%%%%%
+
+% Fill these in with the relevant information for your lecture
+\newcommand{\lecturenum}{5}
+\newcommand{\lecturetitle}{Value Function Approximation}
+\newcommand{\lecturescribe}{Alex Jin, Emma Brunskill}
+
+% Set counter to the final section number from the last set of notes
+% i.e. if you want to start at section 4, put 3 here
+\setcounter{section}{6}
+
+%%%%%%%%%%%%%%
+%% Preamble %%
+%%%%%%%%%%%%%%
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[top=3cm,bottom=2cm,left=3cm,right=3cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath,amsthm,amsfonts,amssymb,amscd}              % for typsetting math
+\usepackage{graphicx}                                           % for graphics
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}          % for hyperlinks (use \href)
+\usepackage{float}                                              % for H option for floats
+\usepackage[stable]{footmisc}
+\usepackage{blkarray}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+%% Spacing
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{0.1in}
+
+%% Title 
+\title{CS234 Notes - Lecture \lecturenum \\ \lecturetitle }
+\author{ \lecturescribe }
+
+% Image path
+\graphicspath{ {images/lecture\lecturenum/} }
+
+% Theorems, definitions (counters reset per section)
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+
+% Useful macros    
+\newcommand{\E}{\mathbb{E}}                                        % for expectation
+\newcommand{\w}{\mathbf{w}}
+
+
+%%%%%%%%%%%%%%
+%% Document %%
+%%%%%%%%%%%%%%
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+So far we have represented value function by a \textit{lookup} table where each state has a corresponding entry, $V(s)$, or each state-action pair has an entry, $Q(s,a)$. However, this approach might not generalize well to problems with very large state and/or action spaces, or in other cases we might prefer quickly learning approximations over converged values of each state. A popular approach to address this problem is via function approximation:
+\begin{equation*}
+v_{\pi} (s) \approx \hat{v} (s,\w)
+\quad\quad\text{or}\quad\quad
+q_{\pi} (s, a) \approx \hat{q} (s, a, \w)
+\end{equation*}
+
+Here $\w$ is usually referred to as the parameter or weights of our function approximator. We list a few popular choices for function approximators:
+
+\begin{itemize}
+  \item Linear combinations of features
+  \item Neural networks
+  \item Decision trees
+  \item Nearest neighbors
+  \item Fourier / wavelet bases
+\end{itemize}
+
+We will further explore two popular classes of $\mathbf{differentiable}$ function approximators: Linear feature representations and Neural networks. The reason for demanding a differentiable function is covered in the following section.
+
+\section{Linear Feature Representations}
+In linear function representations, we use a feature vector to represent a state:
+\begin{equation*}
+x(s) = [x_1(s)\ x_2(s)\ ...\ x_n(s)]
+\end{equation*}
+
+We then approximate our value functions using a linear combination of features:
+\begin{equation*}
+\hat{v} (s,\w) = x(s)^T \w=\sum_{j=1}^n x_j(s) \w_j
+\end{equation*}
+
+We define the (quadratic) objective (also known as the loss) function to be:
+\begin{equation*}
+J(\w) = \E_{\pi} \Big[ (v_{\pi} (s) - \hat{v} (s,\w) )^2 \Big]
+\end{equation*}
+
+\subsection{Gradient descent}
+
+A common technique to minimize the above objective function is called $\textit{Gradient Descent}$. Figure \ref{fig:gd} provides a visual illustration: we start at some particular spot $x_0$, corresponding to some initial value of our parameter $\w$; we then evaluate the gradient at $x_0$, which tells us the direction of the steepest increase in the objective function; to minimize our objective function, we take a step along the negative direction of the gradient vector and arrive at $x_1$; this process is repeated until we reach some convergence criteria.
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.3]{GD.png}
+    \caption{Visualization of Gradient Descent. We wish to reach the center point where our objective function is minimize. We do so by following the red arrows, which points in the negative direction of our evaluated gradient.}
+    \label{fig:gd}
+\end{figure}
+
+Mathematically, this can be summarized as:
+\begin{align*}
+	\nabla_{\w} J(\w) & = \Bigg[ \frac{\partial J(\w)}{\partial \w_1} \frac{\partial J(\w)}{\partial \w_2} \dots \frac{\partial J(\w)}{\partial \w_n} \Bigg] && \text{compute the gradient} \\
+	\Delta \w & = - \frac{1}{2} \alpha \nabla_{\w} J(\w) && \text{compute an update step using gradient descent} \\
+	\w & \gets \w + \Delta \w && \text{take a step towards the local minimum}
+\end{align*}
+
+\subsection{Stochastic gradient descent}
+
+In practice, Gradient Descent is not considered a sample efficient optimizer and stochastic gradient descent ($\mathbf{SGD}$) is used more often. Although the original SGD algorithm referred to updating the weights using a single sample, due to the convenience of vectorization, people often refer to gradient descent on a minibatch of samples as SGD as well. In (minibatch) SGD, we sample a minibatch of past experiences, compute our objective function on that minibatch, and update our parameters using gradient descent on the minibatch. Let us now go back to several algorithms we covered in previous lectures and see how value function approximations can be incorporated.
+
+\subsection{Monte Carlo with linear VFA}
+
+\begin{algorithm}
+\caption{Monte Carlo Linear Value Function Approximation for Policy Evaluation}\label{alg:mc-lvfa-pe}
+\begin{algorithmic}[1]
+\State Initialize $\w = 0$, $Returns(s)=0$ $\forall s$, $k = 1$
+\Loop
+\State Sample k-th episode $(s_{k1}, a_{k1},r_{k1},s_{k2}, \ldots, s_{k},L_{k})$ given $\pi$
+\For{$t=1, \ldots, L_k$}
+\If{first visit to (s) in episode k}
+\State Append $\sum_{j=t}^{L_k} r_{kj}$ to $Return(s_t)$
+\State $\w \gets \w + \alpha (Return(s_t)-\hat{v} (s_t,\w)) x(s_t)$
+\EndIf
+\EndFor
+\State $k=k+1$
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm \ref{alg:mc-lvfa-pe} is a modification of First-Visit Monte Carlo Policy Evaluation, and we replace our value function with our linear VFA. We also make a note that, although our return, $Return(s_t)$, is an unbiased estimate, it is often very noisy.
+
+\subsection{Temporal Difference (TD(0)) with linear VFA}
+
+Recall that in the tabular setting, we approximate $V^{\pi}$ via bootstrapping and sampling and update $V^{\pi}(s)$ by
+\begin{equation*}
+V^{\pi}(s) = V^{\pi}(s) + \alpha (r+\gamma V^{\pi}(s') - V^{\pi}(s))
+\end{equation*}
+
+where $r+\gamma V^{\pi}(s')$ represents our \textit{target}. Here we use the same VFA for evaluating both our target and value. In later lectures we will consider techniques for using different VFAs (such as in the control setting).
+
+Using VFAs, we replace $V^{\pi}$ with $\hat{V}^{\pi}$ and our update equation becomes:
+\begin{align*}
+\hat{V}^{\pi}(s,\w) & = \hat{V}^{\pi}(s,\w) + \alpha (r+\gamma \hat{V}^{\pi}(s',\w) - \hat{V}^{\pi}(s,\w)) \nabla_{\w} \hat{V}^{\pi}(s,\w) \\
+& = \hat{V}^{\pi}(s,\w) + \alpha (r+\gamma \hat{V}^{\pi}(s',\w) - \hat{V}^{\pi}(s,\w)) \mathbf{x}(s)
+\end{align*}
+
+In value function approximation, although our target is a biased and approximated estimate of the true value $V^{\pi}(s)$, linear TD(0) will still converge (close) to the global optimum. We will prove this assertion now.
+
+\subsection{Convergence Guarantees for Linear VFA for Policy Evaluation}
+
+We define the mean squared error of a linear VFA for a particular policy $\pi$ relative to the true value as:
+\begin{align*}
+MSVE(\w) = \sum_{s \in \mathbf{s}} \mathbf{d} (\mathbf{s}) (\mathbf{v}^{\pi}(s) - \hat{\mathbf{v}}^{\pi} (s,\w))^2
+\end{align*}
+
+where $\mathbf{d} (\mathbf{s})$ is the stationary distribution of states under policy $\pi$ in the true decision process and $\hat{\mathbf{v}}^{\pi} (s,\w) = \mathbf{x}(s)^T \w$ is our linear VFA.
+
+\begin{theorem}
+Monte Carlo policy evaluation with VFA converges to the weights $\w_{MC}$ with minimum mean squared error.
+\begin{equation*}
+MSVE(\w_{MC}) = \min_{\w} \sum_{s \in \mathbf{s}} \mathbf{d} (\mathbf{s}) (\mathbf{v}^{\pi}(s) - \hat{\mathbf{v}}^{\pi} (s,\w))^2
+\end{equation*}
+\end{theorem}
+
+\begin{theorem}
+TD(0) policy evaluation with VFA converges to the weights $\w_{TD}$ which is within a constant factor of the minimum mean squared error.
+\begin{equation*}
+MSVE(\w_{MC}) = \frac{1}{1-\gamma} \min_{\w} \sum_{s \in \mathbf{s}} \mathbf{d} (\mathbf{s}) (\mathbf{v}^{\pi}(s) - \hat{\mathbf{v}}^{\pi} (s,\w))^2
+\end{equation*}
+\end{theorem}
+
+We omit the proofs here and encourage interested readers to look at \cite{Tsitsiklis} for a more in-depth discussion.
+
+\subsection{Control using VFA}
+
+Similar to VFAs, we can also use function approximators for action-values. That is, we let $\hat{q} (s, a, \w) \approx q_{\pi} (s, a)$. We may then interleave \textbf{policy evaluation}, by approximating using $\hat{q} (s, a, \w)$, and \textbf{policy improvement}, by $\epsilon$-greedy policy improvement. To be more concrete, let's write out this mathematically.
+
+First, we define our objective function $J(\w)$ as
+\begin{align*}
+J(\w) & = \E_{\pi} [(q_{\pi} (s,a) - \hat{q}^{\pi} (s,a,\w) )^2]
+\end{align*}
+
+Similar to what we did earlier, we may then use either gradient descent or stochastic gradient descent to minimize the objective function. For example, for a linear action-value function approximator, this can be summarized as:
+\begin{align*}
+x(s,a) & = [x_1(s,a)\ x_2(s,a)\ ...\ x_n(s,a)] && \text{state-action value features} \\
+\hat{q} (s,a,\w) & = x(s,a) \w && \text{represent state-action value as linear combinations of features} \\
+J(\w) & = \E_{\pi} [(q_{\pi} (s,a) - \hat{q}^{\pi} (s,a,\w) )^2] && \text{define objective function} \\
+-\frac{1}{2}\nabla_{\w} J(\w) & = \E_{\pi} [(q_{\pi} (s,a) - \hat{q}^{\pi} (s,a,\w) ) \nabla_{\w}  \hat{q}^{\pi} (s,a,\w)] && \text{compute the gradient} \\
+& = (q_{\pi} (s,a) - \hat{q}^{\pi} (s,a,\w) ) x(s,a) \\
+\Delta \w & = - \frac{1}{2} \alpha \nabla_{\w} J(\w) && \text{compute an update step using gradient descent} \\
+& = \alpha (q_{\pi} (s,a) - \hat{q}^{\pi} (s,a,\w) ) x(s,a) \\
+\w & \gets \w + \Delta \w && \text{take a step towards the local minimum}
+\end{align*}
+
+For Monte Carlo methods, we substitute our target $q_{\pi} (s,a)$ with a return $G_t$. That is, our update becomes:
+\begin{equation*}
+\Delta \w = \alpha (G_t - \hat{q} (s,a,\w) ) \nabla_{\w}  \hat{q} (s,a,\w)
+\end{equation*}
+
+For SARSA, we substitute our target with a TD target:
+\begin{equation*}
+\Delta \w = \alpha (r+\gamma \hat{q} (s',a',\w) - \hat{q} (s,a,\w) ) \nabla_{\w}  \hat{q} (s,a,\w)
+\end{equation*}
+
+For Q-learning, we substitute our target with a max TD target:
+\begin{equation*}
+\Delta \w = \alpha (r+\gamma \max_{a'} \hat{q} (s',a',\w) - \hat{q} (s,a,\w) ) \nabla_{\w}  \hat{q} (s,a,\w)
+\end{equation*}
+
+We note that because our use of value function approximations, which can be expansions, to carry out our Bellman backup, convergence is not guaranteed. We refer users to look for Baird's Counterexample for a more concrete illustration. We summarize contraction guarantees in the table \ref{tab:control-summary}.
+
+\begin{table}[]
+\centering
+\begin{tabular}{lccc}
+Algorithm           & Tabular & Linear VFA & Nonlinear VFA \\
+Monte-Carlo Control & Yes     & (Yes)      & No \\
+SARSA               & Yes     & (Yes)      & No \\
+Q-learning          & Yes     & No         & No \\
+\end{tabular}
+\caption{Summary of convergence of Control Methods with VFA. (Yes) means the result chatters around near-optimal value function.}\label{tab:control-summary}
+\end{table}
+
+\section{Neural Networks}
+
+Although linear VFAs often work well given the right set of features, it can also be difficult to hand-craft such feature set. Neural Networks provide a much richer function approximation class that is able to directly go from states without requiring an explicit specification of features.
+
+Figure \ref{fig:nn} shows a generic feedforward ANN. The network in the figure has an output layer consisting of two output units, an input layer with four input units, and two hidden layers: layers that are neither input nor output layers. A real-valued weight is associated with each link. The units are typically semi-linear, meaning that they compute a weighted sum of their input signals and then apply a nonlinear function to the result. This is usually referred to as activation function. In assignment 2, we studied how neural networks with a single hidden layer can have the ``universal approximation'' property, both experience and theory show that approximating the complex functions needed is made much easier with a hierarchical composition of multiple hidden layers.
+
+In the next lecture, we will take a closer look at some theory and recent results of neural networks being applied to solve reinforcement learning problems.
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.3]{NN.png}
+    \caption{A generic feedforward neural network with four input units, two output units, and two hidden layers.}
+    \label{fig:nn}
+\end{figure}
+
+%%%%%%%%%%%%%%%%
+%% References %%
+%%%%%%%%%%%%%%%%
+\begin{thebibliography}{9}
+
+% \bibitem{ExampleRef}
+% Use [ACL or whatever] type format
+
+
+\bibitem{Tsitsiklis}
+Tsitsiklis and Van Roy. An Analysis of Temporal-Difference Learning with Function Approximation. 1997.
+
+\end{thebibliography}
+
+\end{document}

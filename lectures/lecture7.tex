@@ -1,0 +1,277 @@
+\documentclass{article}
+
+%%%%%%%%%%%%
+%% Config %%
+%%%%%%%%%%%%
+
+% Fill these in with the relevant information for your lecture
+\newcommand{\lecturenum}{7}
+\newcommand{\lecturetitle}{Imitation Learning}
+\newcommand{\lecturescribe}{James Harrison, Emma Brunskill}
+
+% Set counter to the final section number from the last set of notes
+% i.e. if you want to start at section 4, put 3 here
+\setcounter{section}{7}
+
+%%%%%%%%%%%%%%
+%% Preamble %%
+%%%%%%%%%%%%%%
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[top=3cm,bottom=2cm,left=3cm,right=3cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath,amsthm,amsfonts,amssymb,amscd}              % for typsetting math
+\usepackage{graphicx}                                           % for graphics
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}          % for hyperlinks (use \href)
+\usepackage{float}                                              % for H option for floats
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+%% Spacing
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{0.1in}
+
+%% Title
+\title{CS234 Notes - Lecture \lecturenum \\ \lecturetitle }
+\author{ \lecturescribe }
+
+% Image path
+\graphicspath{ {images/lecture\lecturenum/} }
+
+% Theorems, definitions (counters reset per section)
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+
+% Useful macros
+\newcommand{\E}{\mathbb{E}}                                        % for expectation
+
+
+
+
+%%%%%%%%%%%%%%
+%% Document %%
+%%%%%%%%%%%%%%
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+In reinforcement learning, there are several theoretical and practical hurdles that must be overcome. These include optimization, the effect of delayed consequences, how to do exploration, and how to generalize. Importantly, however, we would like to handle all of the above challenges while also being data efficient and computationally efficient.
+
+We will discuss general approaches to efficient exploration later in the course, for which the techniques are capable of handling general MDPs. However, if we have known structure in the problem, or we have outside knowledge that we can use, we can explore considerably more efficiently. In this lecture, we will talk about how to imitate and learn from human (or expert, generally) behavior on tasks.
+
+\section{Imitation Learning}
+
+Previously, we have aimed to learn policies from rewards, which are often sparse. For example, a simple reward signal may be whether or not an agent won a game. This approach is successful in situations where data is cheap and easily gathered. This approach fails however, when data gathering is slow, failure must be avoided (e.g. autonomous vehicles), or safety is desired.
+
+One approach to mitigate the sparse reward problem is to manually design reward functions that are dense in time. However, this approach requires a human to hand-design a reward function with the desired behavior in mind. It is therefore desirable to learn by imitating agents performing the task in question.
+
+\subsection{Learning from Demonstration}
+
+Generally, experts provide a set of demonstration trajectories, which are sequences of states and actions. More formally, we assume we are given:
+\begin{itemize}
+    \item State space, action space
+    \item Transition model $P(s' \mid s,a)$
+    \item No reward function, $R$
+    \item Set of one or more teacher demonstrations $(s_0, a_0, s_1, a_1, \ldots)$, where actions are drawn from the teacher's policy $\pi^*$
+\end{itemize}
+
+\section{Behavioral Cloning}
+
+{\centering \textit{Can we learn the teacher's policy using supervised learning?}\par}
+
+In behavioral cloning, we aim simply to learn the policy via supervised learning. Specifically, we will fix a policy class and aim to learn a policy mapping states to actions given the data tuples $\{(s_0,a_0),(s_1,a_1),\ldots\}$. One notable example of this is ALVINN, which learned to map from sensor inputs to steering angles.
+
+% ref alvinn
+
+% include alvinn image
+
+One challenge to this approach is that data is not distributed i.i.d.~in the state space. This i.i.d.~assumption is standard in the supervised learning literature and theory. However, in the RL context, errors are compounding; they accumulate over the length of the episode. The training data for the learned policy will be tightly clustered around expert trajectories. If a mistake is made that puts the agent in a part of the state space that the expert did not visit, the agent has no data to learn a policy from. In this case, the error scales quadratically in the episode length, as opposed to the linear scaling in standard RL.
+
+% DAGGER
+\subsection{DAGGER: Dataset Aggregation}
+
+%ref dagger
+
+Dataset Aggregation (DAGGER, algorithm \ref{alg:dagger}, \cite{ross}) aims to mitigate the problem of compounding errors by adding data for newly visited states. As opposed to assuming there is a pre-defined set of expert demonstrations, we assume that we can generate more data from an expert. The limitation of this, of course, is that an expert must be available to provide labels, sometimes in real time.
+
+\begin{algorithm}
+\caption{DAGGER}\label{alg:dagger}
+\begin{algorithmic}[1]
+\State Initialize $\mathcal{D} \gets \emptyset$
+\State Initialize $\hat{\pi}_1$ to any policy in $\Pi$
+\For{$i = 1$ to $N$}
+\State Let $\pi_i = \beta_i \pi^* + (1 - \beta_i) \hat{\pi}_i$
+\State Sample $T$-step trajectories using $\pi_i$
+\State Get dataset $\mathcal{D}_i = \{(s,\pi^*(s))\}$ of visited states by $\pi_i$ and actions given by expert
+\State Aggregate datasets: $\mathcal{D} \gets \mathcal{D} \cup \mathcal{D}_i$
+\State Train classifier $\hat{\pi}_{i+1}$ on $\mathcal{D}$
+\EndFor
+\Return best $\hat{\pi}_{i}$ on validation
+\end{algorithmic}
+\end{algorithm}
+
+\section{Inverse Reinforcement Learning (IRL)}
+
+{\centering \textit{Can we recover the reward function, $R$?}\par}
+
+In inverse reinforcement learning (also referred to as inverse optimal control), the goal is to learn the reward function (that has not been provided) based on the expert demonstrations. Without assumptions on the optimality of the demonstrations, this problem is intractable as any arbitrary reward function may give rise to the observed trajectories.
+
+\subsection{Linear Feature Reward Inverse RL}
+
+We consider a reward which is represented as a linear combination of features
+\begin{equation}
+    R(s) = w^T x(s)
+\end{equation}
+where $w \in \mathbb{R}^n, x : S \to \mathbb{R}^n$. In this case, the IRL problem is to identify the weight vector $w$, given a set of demonstrations. The resulting value function for a policy $\pi$ can be expressed as
+\begin{align}
+    V^\pi(s)
+    &= \E_\pi \left[ \sum_{t=0}^\infty \gamma^t R(s_t) \mid s_0 = s \right] \\
+    &= \E_\pi \left[ \sum_{t=0}^\infty \gamma^t w^T x(s_t) \mid s_0 = s \right] \\
+    &= w^T \E_\pi \left[ \sum_{t=0}^\infty \gamma^t x(s_t) \mid s_0 = s \right] \\
+    &= w^T \mu(\pi),
+\end{align}
+where $\mu(\pi \mid s_0 = s) \in \mathbb{R}^n$ is the discounted weighted frequency of state features $x(s)$ under policy $\pi$. Note that
+\begin{equation}
+\E_{\pi^*} \left[ \sum_{t=0}^\infty \gamma^t R^*(s_t) \mid s_0 = s \right]
+\geq \E_\pi \left[ \sum_{t=0}^\infty \gamma^t R^*(s_t) \mid s_0 = s \right] \quad \forall \pi,
+\end{equation}
+where $R^*$ denotes an optimal reward function. Thus, if an expert's demonstrations are optimal (i.e. actions are drawn from an optimal policy), to identify $w$ it is sufficient to find some $w^*$ such that
+\begin{equation}
+w^{*T} \mu(\pi^* \mid s_0 = s) \geq w^{*T} \mu(\pi \mid s_0 = s) \quad \forall \pi, \forall s.
+\end{equation}
+In a sense, we want to find a parameterization of the reward function such that the expert policy outperforms other policies.
+
+\section{Apprenticeship Learning}
+
+{\centering \textit{Can we use the recovered reward to generate a good policy?}\par}
+
+For a policy $\pi$ to perform as well as the expert policy $\pi^*$, it suffices that we have a policy such that its discounted, summed feature expectations match the expert's policy \cite{abbeel}. More precisely, if
+\begin{equation}
+    \| \mu(\pi \mid s_0 = s) - \mu(\pi^* \mid s_0 = s) \|_1 \leq \epsilon
+\end{equation}
+then for all $w$ with $\|w\|_\infty \leq 1$,
+\begin{equation*}
+    |w^T \mu(\pi \mid s_0 = s) - w^T \mu(\pi^* \mid s_0 = s)| \leq \epsilon
+\end{equation*}
+by the Cauchy-Schwartz inequality. This observation leads to Algorithm \ref{alg:2} for learning a policy that is as good as the expert policy (see \cite{abbeel} for details).
+
+\begin{algorithm}
+\caption{Apprenticeship Learning via Linear Feature IRL}\label{alg:2}
+\begin{algorithmic}[1]
+\State Initialize policy $\pi_0$
+\For{$i= 1, 2, \ldots$}
+\State Find reward function weights $w$ such that the teacher maximally outperforms all previous controllers:  \begin{align*}
+    &\arg\max_{w} \max_\gamma \gamma \\
+    &\,\,\textrm{s.t.}\,\, w^T \mu(\pi^* \mid s_0 = s) \geq w^T \mu(\pi \mid s_0 = s) + \gamma, \,\, \forall \pi \in \{\pi_0, \pi_1, \ldots, \pi_{i-1}\}, \forall s \\
+    &\quad\quad  \, \|w\|_2 \leq 1
+\end{align*}
+\State Find optimal policy $\pi_i$ for current $w$
+\If{$\gamma \leq \epsilon/2$}
+\Return $\pi_i$
+\EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+In practice, there are challenges associated with this approach:
+
+\begin{itemize}
+    \item If the expert policy is suboptimal, than the resulting policy is a mixture of somewhat arbitrary policies that have the expert policy in their convex hull. In practice, a practitioner can pick the best policy in this set and pick the corresponding reward function.
+    \item This approach relies on being able to compute an optimal policy given a reward function, which may be expensive or impossible.
+    \item There is an infinite number of reward functions with the same optimal policy, and an infinite number of stochastic policies that can match feature counts.
+\end{itemize}
+
+\subsection{Maximum Entropy Inverse RL}
+
+To address the problem of ambiguity, Ziebart el al. \cite{ziebart} introduced Maximum Entropy (MaxEnt) IRL. Consider the collection of all possible $H$-step trajectories in a deterministic MDP. For a linear reward model, a policy is completely specified by its distribution over trajectories. Given this, which policy should we choose given a set of $m$ distributions?
+
+Again, assume the reward function is a linear function of the features, $R(s) = w^T x(s)$. Denoting trajectory $j$ as $\tau_j$, we can write the feature counts for this trajectory as
+\begin{equation}
+    \mu_{\tau_j} = \sum_{s_i \in \tau_j} x(s_i).
+\end{equation}
+Averaging over $m$ trajectories, we can write the average feature counts
+\begin{equation}
+    \tilde{\mu} = \frac{1}{m} \sum_{j=1}^m \mu_{\tau_j}.
+\end{equation}
+ The Principle of Maximum Entropy \cite{jaynes} motivates choosing a distribution with no additional preferences beyond matching the feature expectations in the demonstration dataset
+\begin{align}
+&\max_P - \sum_\tau P(\tau)\log P(\tau) \\
+&\, s.t. \,\,\, \sum_\tau P(\tau) \mu_\tau = \tilde{\mu}\\
+&\quad \quad \, \sum_\tau P(\tau) = 1.
+\end{align}
+In the case of linear rewards, this is equivalent to specifying the weights $w$ that yield a policy with the maximum entropy, constrained to matching the feature expectations. Maximizing the entropy of the distribution over the paths subject to the feature constraints from observed data implies we maximize the likelihood of the observed data under the maximum entropy (exponential family) distribution
+\begin{equation*}
+    P(\tau_j \mid w) = \frac{1}{Z(w)} \exp \left(w^T \mu_{\tau_j}\right) = \frac{1}{Z(w)} \exp \left(\sum_{s_i \in \tau_j} w^T x(s_i)\right),
+\end{equation*}
+with
+\begin{equation*}
+    Z(w,s) = \sum_{\tau_s} \exp \left( w^T \mu_{\tau_s} \right).
+\end{equation*}
+This induces a strong preference for low cost paths, and equal cost paths are equally probable. Many MDPs of interest are stochastic. In these cases, the distribution over paths depends on both the reward weights and on the dynamics
+    \begin{equation*}
+    P(\tau_j \mid w, P(s'|s,a)) \approx \frac{\exp \left(w^T \mu_{\tau_j}\right)}{Z(w,P(s'|s,a))}  \prod_{s_i,a_i \in \tau_{j}} P(s_{i+1}|s_i,a_i).
+\end{equation*}
+
+The weights $w$ are learned by maximizing the likelihood of the data
+    \begin{equation*}
+        w^* = \arg \max_w L(w) = \arg \max_w \sum_{\textrm{examples}} \log P(\tau \mid w).
+    \end{equation*}
+The gradient is the difference between expected empirical feature counts and the learner's expected feature counts, which can be expressed in terms of expected state visitation frequencies     \begin{equation*}
+        \nabla L(w) = \tilde{\mu} - \sum_\tau P(\tau \mid w) \mu_\tau = \tilde{\mu} - \sum_{s_i} D(s_i) x(s_i),
+    \end{equation*}
+    where $D(s_i)$ denotes the state visitation frequency. This approach has been hugely influential. It provides a principled way to select among the many possible reward functions. However, the original formulation of the algorithm requires knowledge of the transition model or the ability to simulate/act in the world to gather samples of the transition model.
+
+\begin{algorithm}
+\caption{Maximum Entropy IRL}\label{alg:3}
+\begin{algorithmic}[1]
+\Statex \textbf{Backward pass}
+\State Set $Z_{s_i,0} = 0$
+\State Recursively compute for $N$ iterations
+\begin{equation}
+    Z_{a_{i,j}} = \sum_k P(s_k \mid s_i, a_{i,j}) \exp (R(s_i \mid w)) Z_{s_k}
+\end{equation}
+\begin{equation}
+    Z_{s_i} = \sum_{a_{i,j}} Z_{a_{i,j}}
+\end{equation}
+\Statex \textbf{Local action probability computation}
+\State $P(a_i,j\mid s_i) = \frac{Z_{a_{i,j}}}{Z_{s_i}}$
+\Statex Forward pass
+\State Set $D_{{s_i},{t}} = P(s_i = s_{\textrm{initial}})$
+\State Recursively compute for $t=1$ to $N$
+\begin{equation}
+    D_{{s_i},{t+1}} = \sum_{a_{i,j}} \sum_k D_{{s_k},{t}} P(a_{i,j}\mid s_i) P(s_k \mid a_{i,j} s_i)
+\end{equation}
+\Statex \textbf{Summing frequencies}
+\State $D_{s_{i}} = \sum_t D_{s_{i,t}}$
+\end{algorithmic}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%
+%% References %%
+%%%%%%%%%%%%%%%%
+\begin{thebibliography}{9}
+
+\bibitem{ross}
+Ross, Stéphane, Geoffrey Gordon, and Drew Bagnell. "A reduction of imitation learning and structured prediction to no-regret online learning." Proceedings of the fourteenth international conference on artificial intelligence and statistics. 2011.
+
+\bibitem{abbeel}
+Abbeel, Pieter, and Andrew Y. Ng. ``Apprenticeship learning via inverse reinforcement learning.'' Proceedings of the twenty-first international conference on Machine learning. 2004.
+
+\bibitem{ziebart}
+Ziebart, Brian D., et al. "Maximum Entropy Inverse Reinforcement Learning." AAAI. Vol. 8. 2008.
+
+\bibitem{jaynes}
+Jaynes, Edwin T. "Information theory and statistical mechanics." Physical review 106.4 (1957): 620.
+
+\end{thebibliography}
+
+\end{document}

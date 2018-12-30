@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <title>CS234: Reinforcement Learning</title>
+
+  <!-- bootstrap -->
+  <link rel="stylesheet" href="./style/bootstrap.min.css">
+  <link rel="stylesheet" href="./style/bootstrap-theme.min.css">
+
+  <!-- Google fonts -->
+  <link href="./style/css" rel="stylesheet" type="text/css">
+
+  <!-- Google Analytics -->
+  <script async="" src="./scripts/analytics.js"></script><script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-60458624-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+  <link rel="stylesheet" type="text/css" href="./style/style.css">
+</head>
+
+<body>
+<div id="header">
+  <a href="http://ai.stanford.edu/">
+    <img src="./images/AI.jpg" style="height:50px; float: left; margin-left: 20px;">
+  </a>
+  
+  <a href="index.html">
+    <h1>CS234: Reinforcement Learning</h1>
+  </a>
+  <div style="clear:both;"></div>
+</div>
+
+<div style="background-color:#8C1515; color:#FFF; padding:15px;">
+  <h1>Assignments (With Guidelines Inspired From CS 221)</h1>
+</div>
+
+<div class="container sec">
+  <h2>Assignments and Due Dates</h2>
+  <br>
+  <table class="table">
+  <tbody>
+	<tr class="active">
+	  <th>Event</th><th>Status</th><th>Due Date / Time</th><th>Late Day Policy</th>
+	</tr>
+	
+	<tr>
+	  <td>Assignment 1</td>
+	  <td>
+		Released. See <a class=blue href="./assignment1/index.html">here</a>.
+		[<a class=blue href="./assignment1/assignment1_solution.pdf">Solution</a>].
+	  </td>
+	  <td>Jan 24, 11:00 PM (23:00)</td>
+	  <td>2 late days allowed. See <a href="index.html#lateday">Late Day Policy</a>.</td>
+    </tr>
+	
+	<tr>
+	  <td>Assignment 2</td>
+	  <td>
+	  	Released. See <a class=blue href="./assignment2/index.html">here</a>.
+	  	[<a class=blue href="./assignment2/solution2.pdf">Solution</a>]
+		</td>
+	  <td>Feb 10, 11:00 PM (23:00)</td>
+	  <td>2 late days allowed. See <a href="index.html#lateday">Late Day Policy</a>.</td>
+    </tr>
+	
+	<tr>
+	  <td>Assignment 3</td>
+	  <td>Released. See <a class=blue href="./assignment3/index.html">here</a>.
+        [<a class=blue href="./assignment3/assignment3_solution.pdf">Solution</a>]</td>
+	  <td>Feb 23, 11:00 PM (23:00)</td>
+	  <td>2 late days allowed. See <a href="index.html#lateday">Late Day Policy</a>.</td>
+    </tr>
+	
+  </tbody>
+  </table>
+</div>
+
+<div class="sechighlight">
+  <div class="container sec">
+	  <h2>Each assignment will have a <span class="bold">written part</span> and a 
+	  <span class="bold">programming part</span>. The following explains what we 
+	  expect for each part and submission instructions.</h2>
+  </div>
+</div>
+
+<div class="container sec">
+    <h2>Written Assignments</h2>
+	Clearly written homeworks are much easier to grade and provide feedback on, and so we 
+	encourage students to type their assignments, but this is not a requirement. You will 
+	receive <span class="bold">one (1) bonus point</span> for submitting a typed written assignment 
+	(e.g. LaTeX, Microsoft Word). You may alternatively scan (to a pdf) handwritten 
+	assignments: handwritten assignments will not receive the bonus point.
+</div>
+
+<div class="sechighlight">
+  <div class="container sec">
+    <h2>Programming Assignments</h2>
+	The grader runs on Python 2.7, which is not guaranteed to work with newer versions (Python 3)
+	or older versions (below 2.7). Please use <a href="https://www.python.org/downloads/">Python 2.7.X</a>
+	to develop your code. The final grading will be run on Linux servers and will be compatible with 
+	all Python 2.7.X versions.
+	<br><br>
+	The submitted code will <span class="bold">not</span> be graded if it has one or more of the 
+	following issues:
+	<br><br>
+	<ul>
+	  <li>
+	    Code that uses Python packages outside the standard library are not guaranteed to work.
+		For example, you may not use an external package that implements q-learning.
+	  </li>
+	  <li>
+	    The code quits in an unexpected way. To prevent this, do not use 
+		<span class="normalgreen">quit()</span>, <span class="normalgreen">exit()</span>, 
+		<span class="normalgreen">sys.exit()</span>, <span class="normalgreen">os._exit()</span>.
+	  </li>
+	  <li>
+	    The code reads external resources beyond the files provided for the homework.
+	  </li>
+	  <li>
+	    Malicious code is considered a violation of the honor code, will receive a score 
+		of zero and will be reported to the Office of Judicial Affairs.
+	  </li>
+	</ul>
+  </div>
+</div>
+
+
+<div class="container sec">
+    <h2>Collaboration Policy</h2>
+    For collaboration policy and things to keep in mind regarding academic misconduct please see 
+	the information <a href="index.html#conduct">here</a>.
+</div>
+
+<div class="sechighlight">
+  <div class="container sec">
+    <h2>Regrades</h2>
+	See regrading policies <a href="index.html#regrade">here</a>.
+  </div>
+</div>
+
+<br><br>
+
+<div style="background-color:#8C1515; color:#FFF; padding:15px;">
+  <a name="submission"></a>
+  <h1>Submission Instructions</h1>
+</div>
+
+
+  <div class="container sec">
+    <h2>GradeScope</h2>
+	We will use GradeScope for grading written problems. To sign up for our class, follow the
+	instructions below:
+	<br><br>
+	<ul>
+	  <li>
+	    Go to <a href="https://gradescope.com/">https://gradescope.com/</a>.
+	  </li>
+	  <li>
+	    Click “Sign up for free” and select “I am a student”.
+	  </li>
+	  <li>
+	    Sign in with your Stanford SUNet id email account.
+	  </li>
+	  <li>
+	    Use Entry code: 9ZRKJ3.
+	  </li>
+	</ul>
+	If you have any questions, please reach out on <a href="https://piazza.com/class/jbb728cf5s84rv">Piazza</a>.
+  </div>
+
+<div class="sechighlight">
+<div class="container sec">
+    <h2>Written Assignments</h2>
+    All assignments (homework problems and project milestones) must be submitted on 
+	<a href="https://gradescope.com/">GradeScope</a> by <span class="boldred">11:00 PM (23:00)</span>. 
+	Make sure to compile all written portions into a single PDF file before uploading to 
+	GradeScope. Mark each page to the corresponding problem.
+</div>
+</div>
+
+
+  <div class="container sec">
+    <h2>Programming Assignments</h2>
+	All assignments (homework problems and project milestones) must be submitted using the submit 
+	script by <span class="boldred">11:00 PM (23:00)</span>. Please note that the submission script 
+	<span class="bold">only works on</span>
+	<a href="https://srcc.stanford.edu/farmshare2/connecting"><span class="boldblue">rice</span></a>
+	(<span class="normalgreen">rice.stanford.edu</span>).
+	To submit your assignment, please follow the instructions below:
+	<br><br>
+	<ul>
+	  <li>
+	    Zip your assignment by running the following command in your assignment folder:
+		<br>
+		<ul>
+		  <li><span class="normalgreen">make submit</span></li>
+		</ul>
+	  </li>
+	  <br>
+	  <li>
+	    Copy your submission files (usually <span class="normalgreen"> &lt;assignment ID&gt;.zip</span>) to 
+		<span class="normalgreen">rice.stanford.edu</span>. You can use a graphical interface 
+		(<a href="https://itservices.stanford.edu/service/ess/pc/securefx">SecureFX</a>, 
+		<a href="https://filezilla-project.org/">FileZilla</a>, 
+		<a href="http://rsug.itd.umich.edu/software/fugu/">Fugu</a>) or the following command:
+		<br>
+		<ul>
+		  <li><span class="normalgreen">scp &lt;your submission file(s)&gt; &lt;your SUNetID&gt; @rice.stanford.edu:</span></li>
+		</ul>
+	  </li>
+	  <br>
+	  <li>
+	    Login to <span class="normalgreen">rice.stanford.edu</span>:
+		<ul>
+		  <li><span class="normalgreen">ssh &lt;your SUNetID&gt; @rice.stanford.edu</span></li>
+		</ul>
+	  </li>
+	  <br>
+	  <li>
+	    For Windows, you can use <a href="https://itservices.stanford.edu/service/ess/pc/securecrt">SecureCRT</a>, 
+		<a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/">PuTTY</a>, or 
+		<a href="https://www.cygwin.com/">Cygwin</a>. Make sure you use the <span class="bold">binary transfer mode</span>, 
+		as the ASCII transfer mode will damage PDF files!
+	  </li>
+	  <br>
+	  <li>
+	    Under the directory where your zip file is located, type:
+		<ul>
+		  <li><span class="normalgreen">/afs/ir.stanford.edu/class/cs234/submit</span></li>
+		</ul>
+	  </li>
+	</ul>
+	
+	You are allowed to submit an assignment a maximum of <span class="bold">ten (10)</span> times. Each submission 
+	will replace the previous.
+	<br><br>
+	
+	Since other submission methods are not accepted (such as email), it is important to check early on that you can 
+	use the submit script. Please try this out early and do not try this for the first time at the deadline. If you 
+	are having trouble or something goes wrong, please reach out on 
+	<a href="https://piazza.com/class/jbb728cf5s84rv">Piazza</a> or ask a CA. Do not send us your submission via email.
+	We give partial credit and so partial work is better than not submitting anything. We will automatically sanity 
+	check your code in some basic test cases, but we may grade your code on additional test cases. It is important to 
+	rigorously check your code yourself.
+  </div>
+
+
+<div class="sechighlight">
+<div class="container sec">
+    <h2>Project</h2>
+    For the project milestones and reports, make sure <span class="bold">only one member</span> of your group submits 
+	a <u>group submission</u> on behalf of the entire group on <a href="https://gradescope.com/">GradeScope</a> 
+	by <span class="boldred">11:00 PM (23:00)</span>. Make sure to include every team member when submitting for the group.
+	See Gradescope <a href="https://gradescope.com/get_started">“Create a group assignment”</a> for any questions.
+	<br><br>
+	For the final project, please submit your code (do not include any data files) on rice as a single 
+	<span class="normalgreen">project.zip</span> file.
+</div>
+</div>
+
+<br><br>
+
+<!-- jQuery and Boostrap -->
+<script src="./scripts/jquery.min.js"></script>
+<script src="./scripts/bootstrap.min.js"></script>
+
+
+</body></html>

@@ -1,0 +1,16 @@
+\newpage
+\textbf{\Large Question 4 -- MC Update vs TD Update \hfill [15 pts]} \\
+
+\vspace{1.5cm}
+\textbf{A) Monte Carlo update} \\
+a) $$Q(s,a)  \leftarrow Q(s,a) + \alpha(G_t - Q(s,a)) $$ \\
+\vspace{1.5cm}
+Here $G_t$ is discounted sum of returns\\
+b) $G_t$ is sampled\\
+\vspace{1.5cm}
+c) $O(T)$ where $T$ is the length of the episode \\
+\textbf{B) Temporal Difference update} \\
+a) $$Q(s_t,a_t) \leftarrow Q(s_t,a_t) + \alpha (r_t + \gamma Q(s_{t+1},a_{t+1}) - Q(s_t,a_t))$$
+b) $Q(s_{t+1},a_{t+1})$ is bootstrapping
+\vspace{0.5cm}
+

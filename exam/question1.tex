@@ -1,0 +1,41 @@
+\newpage
+\textbf{\Large Question 1 -- Warm-Up \hfill [15pts]} \\
+
+\textbf{A)}
+
+\begin{enumerate}
+\item True
+\item True
+\item True
+\item True
+\item False
+\item False
+\item False
+\end{enumerate}
+
+\textbf{B)}
+\begin{enumerate}
+\item The number of deterministic policies are $|A|^{|S|}$. The number of stochastic policies is uncountable.
+
+\item No, REINFORCE will not necessarily converge to an optimal policy, even if the policy class can represent the optimal policy. It is only guaranteed to converge to a local minimum. In special cases, when the objective function is convex, i.e local minimum is the global minimum then one can guarantee convergence to an optimal policy.
+
+\item SARSA for finite-state and finite-action MDPs will converge to the optimal function value when the following conditions are satisfied:
+\begin{itemize}
+\item The policy sequence satisfies the conditions of GLIE (greedy in the limit of infinite exploration).
+\item The step-sizes satisfy the Robbins-Munro conditions.
+\end{itemize}
+
+\item Maximizing the entropy of the distribution over the paths subject to the feature constraints from observed data implies we maximize the likelihood of the observed data under the maximum entropy (exponential family) distribution.
+\begin{equation}
+P(\tau_j|w) = \frac{1}{Z(w)} \exp(w^T \mu_{\tau_j}) = \frac{1}{Z(w)} \exp\left(\sum_{s_i \in \tau_j} w^T \mu_{\tau_j} x(s_i) \right)
+\end{equation}
+
+The optimization problem being
+\begin{equation}
+\begin{split}
+& \max_P - \sum_{\tau} P(\tau)\log P(\tau) \\
+& \text{s.t} \;\; \sum_{\tau} P(\tau) = 1 \;\;.
+\end{split}
+\end{equation}
+
+\end{enumerate}

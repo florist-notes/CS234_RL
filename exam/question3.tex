@@ -1,0 +1,16 @@
+\newpage
+\textbf{\Large Question 3 -- Value Iteration \hfill [10 pts]}
+\vspace{0.5cm}
+
+a) Consider a MDP $M(S,A,P,R,\gamma)$ with 2 states $S=\{S_1,S_2\}$. From each state there are 2 available actions $A=\{stay,go\}$. Choosing \textit{``stay''} from any state leaves you in the same state and gives reward -1. Choosing \textit{``go''} from state $S_1$ takes you to state $S_2$ deterministically giving reward -2, while choosing \textit{``go''} from state $S_2$ ends the episode giving reward 3.
+
+Let us initialize value iteration as $V_0 = [0, 0]$. Then $V_1 = [-1, 3]$ and $V_2 = [1, 3]$. We also have $V^{\ast}=[1, 3]$. Thus for state $S_1$, convergence is clearly not monotonic.
+
+b) The Bellman operator is a contraction. This means that the maximum absolute value across all states of the error (difference of the value function compared to the optimal value function) must not increase between iterations of value iteration. However, for individual states it is possible that the error increases between iterations. In this example, $||V_0 - V^{\ast}||_{\infty} = 3$, $||V_1 - V^{\ast}||_{\infty} = 2$ and $||V_2 - V^{\ast}||_{\infty} = 0$, so clearly there is no contradiction.
+
+
+
+
+
+
+

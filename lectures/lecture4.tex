@@ -1,0 +1,391 @@
+\documentclass{article}
+
+%%%%%%%%%%%%
+%% Config %%
+%%%%%%%%%%%%
+
+% Fill these in with the relevant information for your lecture
+\newcommand{\lecturenum}{4}
+\newcommand{\lecturetitle}{Model Free Control}
+\newcommand{\lecturescribe}{Michael Painter, Emma Brunskill}
+
+% Set counter to the final section number from the last set of notes
+% i.e. if you want to start at section 4, put 3 here
+\setcounter{section}{4}
+
+%%%%%%%%%%%%%%
+%% Preamble %%
+%%%%%%%%%%%%%%
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[top=3cm,bottom=2cm,left=3cm,right=3cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath,amsthm,amsfonts,amssymb,amscd,bm}              % for typsetting math
+\usepackage{graphicx}                                           % for graphics
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}          % for hyperlinks (use \href)
+\usepackage{float}                                              % for H option for floats
+\usepackage[stable]{footmisc}
+\usepackage{blkarray}
+\usepackage[toc,page]{appendix}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+%% Spacing
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{0.1in}
+
+%% Title
+\title{CS234 Notes - Lecture \lecturenum \\ \lecturetitle }
+\author{ \lecturescribe }
+
+% Image path
+\graphicspath{ {images/lecture\lecturenum/} }
+
+% Theorems, definitions (counters reset per section)
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+
+\theoremstyle{definition}
+\newtheorem{exercise}{Exercise}[section]
+\newtheorem{definition}{Definition}[section]
+
+\theoremstyle{remark}
+\newtheorem*{solution}{Solution}
+
+% Useful macros
+\newcommand{\E}{\mathbb{E}}                                        % for expectation
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+
+
+%%%%%%%%%%%%%%
+%% Document %%
+%%%%%%%%%%%%%%
+
+\begin{document}
+\maketitle
+
+\section{Model Free Control}
+
+Last class, we discussed how to evaluate a given policy while assuming we do not know how the world works and only interacting with the environment.  This gave us our \textbf{model-free policy evaluation} methods: Monte Carlo policy evaluation and TD learning.  This lecture, we will discuss \textbf{model-free control} where we learn good policies under the same constraints (only interactions, no knowledge of reward structure or transition probabilities).  This framework is important in two types of domains:
+\begin{enumerate}[noitemsep,partopsep=0pt,topsep=0pt,parsep=0pt]
+	\item When the MDP model is unknown, but we can sample trajectories from the MDP, or
+	\item When the MDP model is known but computing the value function via our model-based control methods is infeasible due to size of the domain.
+\end{enumerate}
+
+In this lecture, we will still restrict ourselves to the \textbf{tabular} setting, where we can represent each state or state-action value as an element of a lookup table.  Next lecture, we will be re-examining the algorithms from today and the previous lecture under the \textbf{value function approximation} setting, which involves trying to fit a function to the state or state-action value function.
+
+\subsection{Generalized Policy Iteration}
+
+Recall first our model-based policy iteration algorithm, which we re-write in algorithm \ref{alg:mbpi}, for convenience.
+
+\begin{algorithm}
+\caption{Model-based Policy Iteration Algorithm}\label{alg:mbpi}
+\begin{algorithmic}[1]
+\Procedure{Policy Iteration}{$M,\epsilon$}
+\State $\pi \gets $ Randomly choose a policy $\pi \in \Pi$
+\While{true}
+\State $V^{\pi} \gets$ \small POLICY EVALUATION \normalsize ($M,\pi,\epsilon$)
+\State $\pi^{\ast}(s) \gets \underset{a \in A}{\arg\max} \; \left[ R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a) V^{\pi}(s') \right] \;\;,\; \forall \; s \in S$ (policy improvement)
+\If{$\pi^{\ast}(s) = \pi(s)$}
+\State break
+\Else
+\State $\pi \gets \pi^{\ast}$
+\EndIf
+\EndWhile
+\label{mdp4label}
+\State $V^{\ast} \gets V^{\pi}$
+\State \textbf{return} $V^{\ast}(s), \; \pi^{\ast}(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Last lecture, we introduced methods for model-free policy evaluation, so we can complete line 4 in a model-free way.  However, in order to make this entire algorithm model-free, we must also find a way to do line 5, the policy improvement step, in a model-free way.  By definition, we have $Q^\pi(s,a) = R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a) V^{\pi}(s')$.  Thus, we can get a model-free policy iteration algorithm (Algorithm \ref{alg:mfpi}) by substituting this value into the model-based policy iteration algorithm and using state-action values throughout.
+
+\begin{algorithm}
+\caption{Model-free Generalized Policy Iteration Algorithm}\label{alg:mfpi}
+\begin{algorithmic}[1]
+\Procedure{Policy Iteration}{$M,\epsilon$}
+\State $\pi \gets $ Randomly choose a policy $\pi \in \Pi$
+\While{true}
+\State $Q^{\pi} \gets$ \small POLICY EVALUATION \normalsize ($M,\pi,\epsilon$)
+\State $\pi^{\ast}(s) \gets \underset{a \in A}{\arg\max} \; Q^\pi(s,a)  \;\;,\; \forall \; s \in S$ (policy improvement)
+\If{$\pi^{\ast}(s) = \pi(s)$}
+\State break
+\Else
+\State $\pi \gets \pi^{\ast}$
+\EndIf
+\EndWhile
+\label{mdp4label}
+\State $Q^{\ast} \gets Q^{\pi}$
+\State \textbf{return} $Q^{\ast}(s,a), \; \pi^{\ast}(s)$ for all $s \in S$, $a \in A$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+There are a few caveats to this algorithm due to the substitution we made in line 5:
+\begin{enumerate}[noitemsep,partopsep=0pt,topsep=0pt,parsep=0pt]
+	\item If policy $\pi$ is deterministic or doesn't take every action $a$ with some positive probability, then we cannot actually compute the argmax in line 5.
+	\item The policy evaluation algorithm gives us an estimate of $Q^\pi$, so it is not clear whether line 5 will monotonically improve the policy like in the model-based case.
+\end{enumerate}
+
+
+\subsection{Importance of Exploration}
+\subsubsection{Exploration}
+In the previous section, we saw that one caveat to the model-free policy iteration algorithm is that the policy $\pi$ needs to take every action $a$ with some positive probability, so the value of each state-action pair can be determined.  In other words, the policy $\pi$ needs to explore actions, even if they might be suboptimal with respect to our current Q-value estimates.
+
+\subsubsection{$\epsilon$-greedy Policies}
+In order to explore actions that are suboptimal with respect to our current Q-value estimates, we'll need a systematic way to balance exploration of suboptimal actions with exploitation of the optimal, or greedy, action. One naive strategy is to take a random action with small probability and take the greedy action the rest of the time.  This type of exploration strategy is called an $\epsilon$-\textbf{greedy policy}.  Mathematically, an $\epsilon$-greedy policy with respect to the state-action value $Q^\pi(s,a)$ takes the following form:
+\[
+  \pi(a | s) =
+  \begin{cases}
+       a & \text{ with probability } \frac{\epsilon}{|A|} \\
+       \arg\max_{a} Q^\pi(s,a) & \text{ with probability } 1-\epsilon \\
+  \end{cases}
+\]
+
+\subsubsection{Monotonic $\epsilon$-greedy Policy Improvement}
+We saw in the second lecture via the policy improvement theorem that if we take the greedy action with respect to the current values and then follow a policy $\pi$ thereafter, this policy is an improvement to the policy $\pi$.  A natural question then is whether an $\epsilon$-greedy policy with respect to $\epsilon$-greedy policy $\pi$ is an improvement on policy $\pi$.  This would help us address our second caveat of the generalized policy iteration algorithm, Algorithm \ref{alg:mfpi}.  Fortunately, there is an analogue of the policy improvement theorem for the $\epsilon$-greedy policy, which we state and derive below.
+
+\begin{theorem}[Monotonic $\epsilon$-greedy Policy Improvement]
+Let $\pi_i$ be an $\epsilon$-greedy policy.  Then, the $\epsilon$-greedy policy with respect to $Q^{\pi_i}$, denoted $\pi_{i+1}$, is a monotonic improvement on policy $\pi$.  In other words, $V^{\pi_{i+1}} \geq V^{\pi_i}$.
+\end{theorem}
+
+\begin{proof}
+We first show that $Q^{\pi_i}(s, \pi_{i+1}(s)) \geq V^{\pi_i}(s)$ for all states $s$.
+\begin{align*}
+Q^{\pi_{i}}(s,\pi_{i+1}(s)) &= \sum_{a \in A} \pi_{i+1}(a|s) Q^{\pi_i}(s,a) \\
+	&= \frac{\epsilon}{|A|}\sum_{a \in A} Q^{\pi_i}(s,a) + (1-\epsilon) \max_{a^\prime} Q^{\pi_i}(s,a^\prime) \\
+	&= \frac{\epsilon}{|A|}\sum_{a \in A} Q^{\pi_i}(s,a) + (1-\epsilon) \max_{a^\prime} Q^{\pi_i}(s,a^\prime) \frac{1-\epsilon}{1-\epsilon} \\
+	&= \frac{\epsilon}{|A|}\sum_{a \in A} Q^{\pi_i}(s,a) + (1-\epsilon) \max_{a^\prime} Q^{\pi_i}(s,a^\prime) \sum_{a \in A} \frac{\pi_i(a|s) - \frac{\epsilon}{|A|}}{1-\epsilon} \\
+	&= \frac{\epsilon}{|A|}\sum_{a \in A} Q^{\pi_i}(s,a) + (1-\epsilon) \sum_{a \in A} \frac{\pi_i(a|s) - \frac{\epsilon}{|A|}}{1-\epsilon} \max_{a^\prime} Q^{\pi_i}(s,a^\prime) \\
+	&\geq \frac{\epsilon}{|A|}\sum_{a \in A} Q^{\pi_i}(s,a) + (1-\epsilon) \sum_{a \in A} \frac{\pi_i(a|s) - \frac{\epsilon}{|A|}}{1-\epsilon} Q^{\pi_i}(s,a) \\
+	&= \sum_{a \in A} \pi_i(a|s) Q^{\pi_i}(s,a) \\
+	&= V^{\pi_i}(s)
+\end{align*}
+The first equality follows from the fact that the first action we take is with respect to policy $\pi_{i+1}$, then we follow policy $\pi_i$ thereafter.  The fourth equality follows because $1-\epsilon = \sum_a \left[\pi_i(a|s) - \frac{\epsilon}{|A|}\right]$.
+
+Now from the policy improvement theorem, we have that $Q^{\pi_i}(s, \pi_{i+1}(s)) \geq V^{\pi_i}(s)$ implies $V^{\pi_{i+1}}(s) \geq V^{\pi_i}(s)$ for all states $s$, as desired.
+\end{proof}
+
+Thus, the monotonic $\epsilon$-greedy policy improvement shows us that our policy does in fact improve if we act $\epsilon$-greedy on the current $\epsilon$-greedy policy.
+
+\subsubsection{Greedy in the limit of exploration}
+We introduced $\epsilon$-greedy strategies above as a naive way to balance exploration of new actions with exploitation of current knowledge; however, we can further refine this balance by introducing a new class of exploration strategies that allow us to make convergence guarantees about our algorithms.  This class of strategies is called Greedy in the Limit of Infinite Exploration (GLIE).
+
+\begin{definition}[Greedy in the Limit of Infinite Exploration (GLIE)]
+A policy $\pi$ is greedy in the limit of infinite exploration (GLIE) if it satisfies the following two properties:
+\begin{enumerate}[noitemsep,partopsep=0pt,topsep=0pt,parsep=0pt]
+	\item All state-action pairs are visited an infinite number of times.  I.e. for all $s \in S, a \in A$,
+\begin{equation*}
+\lim_{i\rightarrow\infty} N_i(s,a) \rightarrow \infty,
+\end{equation*}
+where $N_i(s,a)$ is the number of times action $a$ is taken at state $s$ up to and including episode $i$.
+	\item The behavior policy converges to the policy that is greedy with respect to the learned Q-function.  I.e. for all $s \in S, a \in A$,
+\begin{equation*}
+\lim_{i\rightarrow\infty} \pi_i(a | s) = \arg\max_{a} q(s,a) \text{ with probability 1}
+\end{equation*}
+\end{enumerate}
+\end{definition}
+
+One example of a GLIE strategy is an $\epsilon$-greedy policy where $\epsilon$ is decayed to zero with $\epsilon_i = \frac{1}{i}$, where $i$ is the episode number.  We can see that since $\epsilon_i > 0$ for all $i$, we will explore with some positive probability at every time step, hence satisfying the first GLIE condition.  Since $\epsilon_i \rightarrow 0$ as $i \rightarrow \infty$, we also have that the policy is greedy in the limit, hence satisfying the second GLIE condition.
+
+\subsection{Monte Carlo Control}
+Now, we will incorporate the exploration strategies described above with our model-free policy evaluation algorithms from last lecture to give us some model-free control methods.  The first algorithm that we discuss is the Monte Carlo online control algorithm.  In Algorithm \ref{alg:mc-control}, we give the formulation for first-visit online Monte Carlo control.  An equivalent formulation for every-visit control is given by not checking for the first visit in line 7.
+
+\begin{algorithm}
+\caption{Online Monte Carlo Control/On Policy Improvement}\label{alg:mc-control}
+\begin{algorithmic}[1]
+\Procedure{Online Monte Carlo Control}{}
+\State Initialize $Q(s,a)=0$, $Returns(s,a) = 0$ for all $s \in S, a \in A$
+\State Set $\epsilon \gets 1$, $k \gets 1$
+\Loop
+\State Sample $k$th episode $(s_{k1}, a_{k1}, r_{k1}, s_{k2}, \ldots, s_T)$ under policy $\pi$
+\For{$t = 1, \ldots, T$}
+\If{First visit to $(s,a)$ in episode $k$}
+\State Append $\sum_{j=t}^T r_{kj}$ to $Returns(s_t, a_t)$
+\State $Q(s_t, a_t) \gets average(Returns(s_t, a_t))$
+\EndIf
+\EndFor
+\State $k \gets k+1$, $\epsilon = \frac{1}{k}$
+\State $\pi_k = $ $\epsilon$-greedy with respect to $Q$ (policy improvement)
+\EndLoop
+\State \textbf{Return} $Q, \pi$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Now, as stated before, GLIE strategies can help us arrive at convergence guarantees for our model-free control methods.  In particular, we have the following result:
+
+\begin{theorem}
+GLIE Monte Carlo control converges to the optimal state-action value function.  That is $Q(s,a) \rightarrow q(s,a)$.
+\end{theorem}
+
+In other words, if the $\epsilon$-greedy strategy used in Algorithm \ref{alg:mc-control} is GLIE, then the Q value derived from the algorithm will converge to the optimal Q function.
+
+\subsection{Temporal Difference Methods for Control}
+
+Last lecture, we also introduced TD(0) as a method for model-free policy evaluation.  Now, we can build on TD(0) with our ideas of exploration to get TD-style model-free control.  There are two methods of doing this: on-policy and off-policy.  We first introduce the on-policy method in Algorithm \ref{alg:sarsa}, called SARSA.
+
+\begin{algorithm}
+\caption{SARSA}\label{alg:sarsa}
+\begin{algorithmic}[1]
+\Procedure{SARSA}{$\epsilon, \alpha_t$}
+\State Initialize $Q(s,a)$ for all $s \in S, a \in A$ arbitrarily except $Q(terminal, \cdot) = 0$
+\State $\pi \gets $ $\epsilon$-greedy policy with respect to $Q$
+\For{each episode}
+\State Set $s_1$ as the starting state
+\State Choose action $a_1$ from policy $\pi(s_1)$
+\Loop{ until episode terminates}
+\State Take action $a_t$ and observe reward $r_t$ and next state $s_{t+1}$
+\State Choose action $a_{t+1}$ from policy $\pi(s_{t+1})$
+\State $Q(s_t, a_t) \gets Q(s_t, a_t) + \alpha_t [r_t+\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)]$
+\State $\pi \gets$ $\epsilon$-greedy with respect to $Q$ (policy improvement)
+\State $t \gets t+1$
+\EndLoop
+\EndFor
+\State \textbf{Return} $Q, \pi$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+We can see the policy evaluation update takes place in line 10, while the policy improvement is at line 11.  SARSA gets its name from the parts of the trajectory used in the update equation.  We can see that to update the Q-value at state-action pair $(s, a)$, we need the reward, next state and next action, thereby using the values $(s, a, r, s^\prime, a^\prime)$.  SARSA is an on-policy method because the actions $a$ and $a^\prime$ used in the update equation are both derived from the policy that is being followed at the time of the update.
+
+Just like in Monte Carlo, we can arrive at the convergence of SARSA given one extra condition on the step-sizes as stated below:
+
+\begin{theorem}
+SARSA for finite-state and finite-action MDP's converges to the optimal action-value, i.e. $Q(s,a) \rightarrow q(s,a)$, if the following two conditions hold:
+\begin{enumerate}[noitemsep,partopsep=0pt,topsep=0pt,parsep=0pt]
+	\item The sequence of policies $\pi$ from is GLIE
+	\item The step-sizes $\alpha_t$ satisfy the \textbf{Robbins-Munro} sequence such that
+\begin{align*}
+\sum_{t=1}^\infty \alpha_t = \infty \\
+\sum_{t=1}^\infty \alpha_t^2 < \infty
+\end{align*}
+\end{enumerate}
+\end{theorem}
+
+\begin{exercise}
+What is the benefit to performing the policy improvement step after each update in line 11 of Algorithm \ref{alg:sarsa}?  What would be the benefit to performing the policy improvement step less frequently?
+\end{exercise}
+
+\subsection{Importance Sampling for Off-Policy TD}
+Before diving into off-policy TD-style control, let's first take a step back and look at one way to do off-policy TD policy evaluation.  Recall that our TD update took the form
+\begin{align*}
+V(s) \rightarrow V(s) + \alpha (r + \gamma V(s^\prime) - V(s)).
+\end{align*}
+Now, let's suppose that like in the off-policy Monte Carlo policy evaluation case, we have data from a policy $\pi_b$, and we want to estimate the value of policy $\pi_e$.  Then much like in the Monte Carlo policy evaluation case, we can weight the target by the ratio of the probability of seeing the sample in the behavior policy and the evaluated policy via importance sampling.  This new update then takes the form
+\begin{align*}
+V^{\pi_e}(s) \rightarrow V^{\pi_e}(s) + \alpha \left[\frac{\pi_e(a|s)}{\pi_b(a|s)} (r + \gamma V^{\pi_e}(s^\prime) - V^{\pi_e}(s))\right].
+\end{align*}
+Notice that because we only use one trajectory sample instead of sampling the entire trajectory like in Monte Carlo, we only incorporate the likelihood ratio from one step. For the same reason, this method also has significantly lower variance than Monte Carlo.
+
+Additionally, $\pi_b$ doesn't need to be the same at each step, but we do need to know the probability for every step.  As in Monte Carlo, we need the two policies to have the same support.  That is, if $\pi_e(a|s) \times V^{\pi_e}(s^\prime) > 0$, then $\pi_b(a|s) > 0$.
+
+\subsection{Q-learning}
+Now, we return to finding an off-policy method for TD-style control.  In the above formulation, we again leveraged importance sampling, but in the control case, we do not need to rely on this.  Instead, we can maintain state-action Q estimates and bootstrap the value of the best future action.  Our SARSA update took the form
+\begin{align*}
+Q(s_t, a_t) \gets Q(s_t, a_t) + \alpha_t [r_t+\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)],
+\end{align*}
+but we can instead bootstrap the Q value at the next state to get the following update:
+\begin{align*}
+Q(s_t, a_t) \gets Q(s_t, a_t) + \alpha_t [r_t+\gamma \max_{a^\prime} Q(s_{t+1}, a^\prime) - Q(s_t, a_t)].
+\end{align*}
+This gives rise to \textbf{Q-learning}, which is detailed in Algorithm \ref{alg:qlearn}.  Now that we take a maximum over the actions at the next state, this action is not necessarily the same as the one we would derive from the current policy.  Therefore, Q-learning is considered an off-policy algorithm.
+
+\begin{algorithm}
+\caption{Q-Learning with$\epsilon$-greedy exploration}\label{alg:qlearn}
+\begin{algorithmic}[1]
+\Procedure{Q-Learning}{$\epsilon, \alpha, \gamma$}
+\State Initialize $Q(s,a)$ for all $s \in S, a \in A$ arbitrarily except $Q(terminal, \cdot) = 0$
+\State $\pi \gets $ $\epsilon$-greedy policy with respect to $Q$
+\For{each episode}
+\State Set $s_1$ as the starting state
+\State $t \gets 1$
+\Loop{ until episode terminates}
+\State Sample action $a_t$ from policy $\pi(s_t)$
+\State Take action $a_t$ and observe reward $r_t$ and next state $s_{t+1}$
+\State $Q(s_t, a_t) \gets Q(s_t, a_t) + \alpha(r_t + \gamma \max_{a^\prime} Q(s_{t+1}, a^\prime) - Q(s_t, a_t))$
+\State $\pi \gets $ $\epsilon$-greedy policy with respect to $Q$ (policy improvement)
+\State $ t \gets t+1$
+\EndLoop
+\EndFor
+\State \textbf{return} $Q, \pi$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\section{Maximization Bias}
+
+Finally, we are going to discuss a phenomenon known as \textbf{maximization bias}.  We'll first examine maximization bias in a small example.
+
+\subsection{Example: Coins}
+Suppose there are two identical fair coins, but we don't know that they are fair or identical.  If a coin lands on heads, we get one dollar and if a coin lands on tails, we lose a dollar.  We want to answer the following two questions:
+\begin{enumerate}[noitemsep,partopsep=0pt,topsep=0pt,parsep=0pt]
+	\item Which coin will yield more money for future flips?
+	\item How much can I expect to win/lose per flip using the coin from question 1?
+\end{enumerate}
+In an effort to answer this question, we flip each coin once.  We then pick the coin that yields more money as the answer to question 1.  We answer question 2 with however much that coin gave us.  For example, if coin 1 landed on heads and coin 2 landed on tails, we would answer question 1 with coin 1, and question 1 with one dollar.
+
+Let's examine the possible scenarios for the outcome of this procedure.  If at least one of the coins is heads, then our answer to question 2 is one dollar.  If both coins are tails, then our answer is negative one dollar.  Thus, the expected value of our answer to question 2 is $\frac{3}{4} \times (1) + \frac{1}{4} \times (-1) = 0.5$.  This gives us a higher estimate of the expected value of flipping the better coin than the true expected value of flipping that coin.  In other words, we're systematically going to think the coins are better than they actually are.
+
+This problem comes from the fact that we are using our estimate to both choose the better coin and estimate its value.  We can alleviate this by separating these two steps.  One method for doing this would be to change the procedure as follows:  After choosing the better coin, flip the better coin again and use this value as your answer for question 2.  The expected value of this answer is now 0, which is the same as the true expected value of flipping either coin.
+
+\subsection{Maximization Bias in Reinforcement Learning}
+Let's now formalize what we saw above in the context of a one-state MDP with two actions.  Suppose we are in state $s$ and have two actions $a_1$ and $a_2$, both with mean reward 0.  Then, we have that the true values of the state as well as the state-action pairs are zero.  That is, $Q(s, a_1) = Q(s, a_2) = V(s) = 0$.  Suppose that we've sampled some rewards for taking each action so that we have some estimates for the state-action values, $\hat{Q}(s, a_1), \hat{Q}(s, a_2)$.  Suppose further that these samples are unbiased because they were generated using a Monte Carlo method.  In other words, $\hat{Q}(s,a_i) = \frac{1}{n(s,a_i)}\sum_{j=1}^{n(s,a_i)} r_j(s,a_i)$, where $n(s,a_i)$ is the number of samples for the state-action pair $(s,a_i)$.  Let $\hat{\pi} = \arg\max_a \hat{Q}(s,a)$. be the greedy policy with respect to our Q value estimates.  Then, we have that
+\begin{align*}
+\hat{V}(s) &= E[\max(\hat{Q}(s,a_1), \hat{Q}(s,a_2)] \\
+	&\geq \max(E[\hat{Q}(s,a_1)], E[\hat{Q}(s,a_2)]) &&\text{ by Jensen's inequality} \\
+	&= \max(0,0) &&\text{ since each estimate is unbiased and $Q(s, \cdot)=0$} \\
+	&= 0 = V^*(s)
+\end{align*}
+Thus, our state value estimate is at least as large as the true value of state $s$, so we are systematically overestimating the value of the state in the presence of finite samples.
+
+\subsection{Double Q-Learning}
+As we saw in the previous subsection, the state values can suffer from maximization bias as well when we have finitely many samples.  As we discussed in the coin example, decoupling taking the max and estimating the value of the max can get rid of this bias.  In Q-learning, we can maintain two independent unbiased estimates, $Q_1$ and $Q_2$ and when we use one to select the maximum, we can use the other to get an estimate of the value of this maximum.  This gives rise to \textbf{double Q-learning} which is detailed in algorithm \ref{alg:doubleq}.  When we refer to the $\epsilon$-greedy policy with respect to $Q_1+Q_2$ we mean the $\epsilon$-greedy policy where the optimal action at state $s$ is equal to $\arg\max_a Q_1(s, a) + Q_2(s,a)$.
+
+\begin{algorithm}[H]
+\caption{Double Q-Learning}\label{alg:doubleq}
+\begin{algorithmic}[1]
+\Procedure{Double Q-Learning}{$\epsilon, \alpha, \gamma$}
+\State Initialize $Q_1(s,a), Q_2(s,a)$ for all $s \in S, a \in A$, set $t \gets 0$
+\State $\pi \gets $ $\epsilon$-greedy policy with respect to $Q_1+Q_2$
+\Loop
+\State Sample action $a_t$ from policy $\pi$ at state $s_t$
+\State Take action $a_t$ and observe reward $r_t$ and next state $s_{t+1}$
+\If {(with 0.5 probability)}
+\State $Q_1(s_t, a_t) \gets Q_1(s_t, a_t) + \alpha(r_t + \gamma Q_2(s_{t+1}, \arg\max_{a^\prime}Q_1(s_{t+1}, a^\prime)) - Q_1(s_t, a_t))$
+\Else
+\State $Q_2(s_t, a_t) \gets Q_2(s_t, a_t) + \alpha(r_t + \gamma Q_1(s_{t+1}, \arg\max_{a^\prime}Q_2(s_{t+1}, a^\prime)) - Q_2(s_t, a_t))$
+\EndIf
+\State $\pi \gets $ $\epsilon$-greedy policy with respect to $Q_1+Q_2$ (policy improvement)
+\State $ t \gets t+1$
+\EndLoop
+\State \textbf{return} $\pi, Q_1+Q_2$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Double Q-learning can significantly speed up training time by eliminating suboptimal actions more quickly than normal Q-learning.  Sutton and Barto \cite{sb18} have a nice example of this in a toy MDP in section 6.7.
+
+%%%%%%%%%%%%%%%%
+%% References %%
+%%%%%%%%%%%%%%%%
+\begin{thebibliography}{9}
+
+\bibitem{sb18}
+ Sutton, Richard S. and Andrew G. Barto. \emph{Introduction to Reinforcement Learning}. 2nd ed., MIT Press, 2017. Draft. \url{http://incompleteideas.net/book/the-book-2nd.html}.
+
+
+\end{thebibliography}
+
+
+
+\end{document}

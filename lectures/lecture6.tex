@@ -1,0 +1,313 @@
+\documentclass{article}
+
+%%%%%%%%%%%%
+%% Config %%
+%%%%%%%%%%%%
+
+% Fill these in with the relevant information for your lecture
+\newcommand{\lecturenum}{6}
+\newcommand{\lecturetitle}{CNNs and Deep Q Learning}
+\newcommand{\lecturescribe}{Tian Tan, Emma Brunskill}
+
+% Set counter to the final section number from the last set of notes
+% i.e. if you want to start at section 4, put 3 here
+\setcounter{section}{6}
+
+%%%%%%%%%%%%%%
+%% Preamble %%
+%%%%%%%%%%%%%%
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[top=3cm,bottom=2cm,left=3cm,right=3cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath,amsthm,amsfonts,amssymb,amscd}              % for typsetting math
+\usepackage{graphicx}                                           % for graphics
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}          % for hyperlinks (use \href)
+\usepackage{float}                                              % for H option for floats
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+%% Spacing
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{0.1in}
+
+%% Title
+\title{CS234 Notes - Lecture \lecturenum \\ \lecturetitle }
+\author{ \lecturescribe }
+
+% Image path
+\graphicspath{ {images/lecture\lecturenum/} }
+
+% Theorems, definitions (counters reset per section)
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+
+% Useful macros
+\newcommand{\E}{\mathbb{E}}                                        % for expectation
+\newcommand{\w}{\mathbf{w}}
+\newcommand{\wa}{\mathbf{w_A}}
+\newcommand{\wv}{\mathbf{w_v}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+
+%%%%%%%%%%%%%%
+%% Document %%
+%%%%%%%%%%%%%%
+
+\begin{document}
+\maketitle
+
+\section{Value-Based Deep Reinforcement Learning}
+In this section, we introduce three popular value-based deep reinforcement learning (RL) algorithms: \textbf{Deep Q-Network (DQN)} \cite{ref_DQN}, \textbf{Double DQN} \cite{ref_DDQN} and \textbf{Dueling DQN} \cite{ref_DuelingDQN}. All the three neural architectures are able to learn successful policies directly from \textit{high-dimensional inputs}, e.g. preprocessed pixels from video games, by using \textit{end-to-end} reinforcement learning, and they all achieved a level of performance that is comparable to a professional human games tester across a set of 49 names on Atari 2600 \cite{ref_atari}.
+
+\textit{Convolutional Neural Networks (CNNS)} \cite{ref_cnn} are used in these architectures for feature extraction from pixel inputs. Understanding the mechanisms behind feature extraction via CNNs can help better understand how DQN works. The Stanford CS231N course website contains wonderful examples and introduction to CNNs. Here, we direct the reader to the following link for more details on CNNs: \url{http://cs231n.github.io/convolutional-networks/}. The remaining of this section will focus on generalization in RL and value-based deep RL algorithms.
+
+
+\subsection{Recap: Action-Value Function Approximation}
+In the previous lecture, we use parameterized function approximators to represent the action-value function (a.k.s. Q-function). If we denote the set of parameters as $\mathbf{w}$, the Q-function in this \textit{approximation setting} is represented as $\hat{q}(s, a, \mathbf{w})$.
+
+Let's first assume we have access to an oracle $q(s,a)$, the approximate Q-function can be learned by minimizing the mean-squared error between the true action-value function $q(s,a)$ and its approximated estimates,
+\begin{equation} \label{mse_true_q}
+   J(\mathbf{w}) = \E[(q(s,a) - \hat{q}(s,a, \w) )^2]
+\end{equation}
+We can use \textit{stochastic gradient descent (SGD)} to find a local minimum of $J$ by sampling gradients w.r.t. parameters $\w$ and updating $\w$ as follows:
+\begin{equation} \label{update_w}
+  \Delta(\w) = -\frac{1}{2} \alpha \nabla_\w J(\w) = \alpha \E[(q(s,a) - \hat{q}(s,a, \w) ) \nabla_\w \hat{q}(s,a, \w)]
+\end{equation}
+where $\alpha$ is the learning rate. In general, the true action-value function $q(s,a)$ is \textit{unknown}, so we substitute the $q(s,a)$ in Equation (\ref{update_w}) with an approximate \textit{learning target}.
+
+In Monte Carlo methods, we use an unbiased return $G_t$ as the substitute target for episodic MDPs:
+\begin{equation} \label{update_w_MC}
+  \Delta(\w) = \alpha (G_t - \hat{q}(s,a, \w) ) \nabla_\w \hat{q}(s,a, \w)
+\end{equation}
+For SARSA, we instead use \textit{bootstrapping} and present a TD (biased) target $r + \gamma \hat{q}(s',a', \w)$, which leverages the current function approximation value,
+\begin{equation} \label{update_w_SARSA}
+  \Delta(\w) = \alpha (r + \gamma \hat{q}(s',a', \w) - \hat{q}(s,a, \w) ) \nabla_\w \hat{q}(s,a, \w)
+\end{equation}
+where $a'$ is the action taken at the next state $s'$ and $\gamma$ is a discount factor. For Q-learning, we use a TD target $r + \gamma \max_{a'} \hat{q}(s',a', \w)$ and update $\w$ as follows:
+\begin{equation} \label{update_w_Q}
+  \Delta(\w) = \alpha (r + \gamma \max_{a'} \hat{q}(s',a', \w) - \hat{q}(s,a, \w) ) \nabla_\w \hat{q}(s,a, \w)
+\end{equation}
+In subsequent sections, we will introduce how to approximate $\hat{q}(s,a, \w)$ by using a deep neural network and learn neural network parameters $\w$ via end-to-end training.
+
+\subsection{Generalization: Deep Q-Network (DQN) \cite{ref_DQN}}
+The performance of linear function approximators highly depends on the quality of features. In general, handcrafting an appropriate set of features can be difficult and time-consuming. To scale up to making decisions in really \textit{large domains} (e.g. huge state space) and enable automatic feature extraction, deep neural networks (DNNs) are used as function approximators.
+
+\subsubsection{DQN Architecture}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.5]{dqn_net.png}
+     \caption{\textbf{Illustration of the Deep Q-network}: the input to the network consists of an $84 \times 84 \times 4$ preprocessed image, followed by three convolutional layers and two fully connected layers with a single output for each valid action. Each hidden layer is followed by a rectifier nonlinearity (ReLU) \cite{ref_relu}.}
+     \label{fig:dqn}
+ \end{figure}
+
+An illustration of the DQN architecture is shown in Figure \ref{fig:dqn}. The network takes preprocessed pixel image from Atari game environment (see \ref{sec_preprocessing} for preprocessing) as inputs, and outputs a vector containing Q-values for each valid action. The preprocessed pixel input is a summary of the game state $s$, and a single output unit represents the $\hat{q}$ function for a single action $a$. Collectively, the $\hat{q}$ function can be denoted as $\hat{q}(s, \w) \in \mathbb{R}^{|A|}$. For simplicity, we will still use notation $\hat{q}(s, a, \w)$ to represent the estimated action-value for a $(s,a)$ pair in the following paragraphs.
+
+Details of the architecture: the input consists of an $84 \times 84 \times 4$ image. The first convolutional layer has $32$ filters of size $8 \times 8$ with stride $4$ and convolves with the input image, followed by a rectifier nonlinearity (ReLU) \cite{ref_relu}. The second hidden layer convolves $64$ filters of $4 \times 4$ with stride $2$, again followed by a rectifier nonlinearity. This is followed by a third convolutional layer that has $64$ filters of $3 \times 3$ with stride $1$, followed by a ReLU. The final hidden layer is a fully-connected layer with $512$ rectifier (ReLU) units. The output layer is a fully-connected \textit{linear} layer.
+
+\subsubsection{Preprocessing Raw Pixels}
+\label{sec_preprocessing}
+The raw Atari 2600 frames are of size $(210 \times 160 \times 3)$, where the last dimension is corresponding to the RGB channels. The preprocessing step adopted in \cite{ref_DQN} aims at reducing the input dimensionality and dealing with some artifacts of the game emulator. We summarize the preprocessing as follows:
+\begin{itemize}
+\item
+single frame encoding: to encode a single frame, the maximum value for each pixel color value over the frame being encoded and the previous frame is returned. In other words, we return a pixel-wise max-pooling of the $2$ consecutive raw pixel frames.
+\item
+dimensionality reduction: extract the Y channel, also known as luminance, from the \textit{encoded} RGB frame and rescale it to $(84 \times 84 \times 1)$.
+\end{itemize}
+The above preprocessing is applied to the $4$ most recent raw RGB frames and the encoded frames are stacked together to produce the input (of shape $(84 \times 84 \times 4)$) to the Q-Network. Stacking together the recent frames as game state is also a way to transform the game environment into a (almost) Markovian world.
+
+\subsubsection{Training Algorithm for DQN}
+
+The use of large deep neural network function approximators for learning action-value functions has often been avoided in the past since theoretical performance guarantees are impossible, and learning and training tend to be very unstable. In order to use large nonlinear function approximators and scale online Q-learning, DQN introduced two major changes: the use of \textit{experience replay}, and a separate \textit{target network}. The full algorithm is presented in Algorithm \ref{algo_dqn}. Essentially, the Q-network is learned by minimizing the following mean squared error:
+\begin{equation} \label{mse_dqn}
+   J(\mathbf{w}) = \E_{(s_t,a_t,r_t,s_{t+1})}[(y_t^{DQN} - \hat{q}(s_t,a_t, \w) )^2]
+\end{equation}
+where $y_t^{DQN}$ is the one-step ahead learning target:
+\begin{equation} \label{target_dqn}
+   y_t^{DQN} = r_t + \gamma \max_{a'} \hat{q}(s_{t+1},   a', \w^-)
+\end{equation}
+where $\w^-$ represents the parameters of the target network, and the parameters $\w$ of the online network are updated by sampling gradients from minibatches of past transition tuples $(s_t,a_t,r_t,s_{t+1})$. \\ (\textit{Note}: although the learning target is computed from the target network with $\w^-$, the targets $y_t^{DQN}$ are considered to be fixed when making updates to $\w$.)
+
+\textbf{\textit{Experience replay}}:
+
+The agent's experiences (or transitions) at each time step $e_t = (s_t, a_t, r_t, s_{t + 1})$ are stored in a fixed-sized dataset (or \textit{replay buffer}) $D_t = \{e_1, ..., e_t\}$. The replay buffer is used to store the most recent $k = 1$ million experiences (see Figure \ref{fig:replay} for an illustration of replay buffer). The Q-network is updated by SGD with sampled gradients from minibatch data. Each transition sample in the minibatch is sampled uniformly at random from the pool of stored experiences, $(s, a, r, s') \sim U(D)$. This approach has the following \textit{advantages} over standard online Q-learning:
+\begin{itemize}
+\item
+Greater data efficiency: each step of experience can be potentially used for many updates, which improves data efficiency.
+\item
+Remove sample correlations: randomizing the transition experiences breaks the correlations between consecutive samples and therefore reduces the variance of updates and stabilizes the learning.
+\item
+Avoiding oscillations or divergence: the behavior distribution is averaged over many of its previous states and transitions, smoothing out learning and avoiding oscillations or divergence in the parameters. (Note that when using experience replay, it is required to use off-policy method, e.g. Q-learning, because the current parameters are different from those used to generate the samples).
+\end{itemize}
+
+\textit{limitation of experience replay}: the replay buffer does not differentiate important transitions or informative transitions and it always overwrites with the recent transitions due to fixed buffer size. Similarly, the uniform sampling from the buffer gives equal importance to all stored experiences. A more sophisticated replay strategy, Prioritized Replay, has been proposed in \cite{ref_p_replay}, which replays important transitions more frequently, and therefore the agent learns more efficiently.
+
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.5]{replay_buffer.png}
+     \caption{\textbf{Illustration of replay buffer}: the transition $(s, a, r, s')$ is uniformly sampled from the replay buffer for updating Q-network.}
+     \label{fig:replay}
+ \end{figure}
+
+
+\textbf{\textit{Target network}}:
+
+To further improve the stability of learning and deal with \textit{non-stationary learning targets}, a separate target network is used for generating the targets $y_j$ (line \ref{state:update_yj} in Algorithm \ref{algo_dqn}) in the Q-learning update. More specifically, every $C$ updates/steps the target network $\hat{q}(s, a, \w^-)$ is updated by copying the parameters' values ($\w^- = \w$) from the online network $\hat{q}(s, a, \w)$, and the target network remains unchanged and generates targets $y_j$ for the following $C$ updates. This modification makes the algorithm more stable compared to standard online Q-learning, and $C = 10000$ in the original DQN.
+
+\begin{algorithm}
+\caption{deep Q-learning}\label{algo_dqn}
+\begin{algorithmic}[1]
+\State Initialize replay memory $D$ with a fixed capacity
+\State Initialize action-value function $\hat{q}$ with random weights $\w$
+\State Initialize target action-value function $\hat{q}$ with weights $\w^- = \w$
+\For{episode $m = 1, \dots, M$}
+  \State Observe initial frame $x_1$ and preprocess frame to get state $s_1$
+  \For{time step $t = 1, \dots, T$}
+    \State Select action
+      $ a_t = \begin{cases}
+        \text{random action} & \text{with probability $\epsilon$} \\
+        \argmax_a \hat{q}(s_t, a, \w) & \text{otherwise}
+      \end{cases} $
+    \State Execute action $a_t$ in emulator and observe reward $r_t$ and image $x_{t +1}$
+    \State Preprocess $s_t, x_{t+1}$ to get $s_{t+1}$, and store transition $(s_t, a_t, r_t, s_{t+1})$ in $D$
+    \State Sample uniformly a random minibatch of $N$ transitions $(s_j, a_j, r_j, s_{j+1})$ from $D$
+    \State Set $y_j = r_j$ if episode ends at step $j+1$;
+    \State otherwise set $y_j = r_j + \gamma \max_{a'} \hat{q}(s_{j+1}, a', \w^-)$ \label{state:update_yj}
+    \State Perform a stochastic gradient descent step on $J(\w) = \frac{1}{N} \sum_{j = 1}^{N} (y_j - \hat{q} (s_j, a_j, \w))^2$ w.r.t. parameters $\w$
+    \State Every $C$ steps reset $\w^- = \w$
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsubsection{Training Details}
+In the original DQN paper \cite{ref_DQN}, a different network (or agent) was trained on each game with the same architecture, learning algorithm and hyperparameters. The authors clipped all positive rewards from the game environment at $+1$ and all negative rewards at $-1$, which makes it possible to use the same learning rate across all different games. For games where there is a life counter (e.g. \textit{Breakout}), the emulator also returns the number of lives left in the game, which was then used to mark the end of an episode during training by explicitly setting future rewards to zeros. They also used a simple frame-skipping technique (or \textit{action repeat}): the agent selects actions on every $4$-th frame instead of every frame, and its last action is repeated on skipped frames. This reduces the frequency of decisions without impacting the performance too much and enables the agent to play roughly $4$ times more games during training.
+
+RMSProp (see \url{https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf}) was used in \cite{ref_DQN} for training DQN with minibatches of size $32$. During training, they applied $\epsilon$-greedy policy with $\epsilon$ linearly annealed from $1.0$ to $0.1$ over the first million steps, and fixed at $0.1$ afterwards. The replay buffer was used to store the most recent $1$ million transitions. For evaluation at test time, they used $\epsilon$-greedy policy with $\epsilon = 0.05$.
+
+\subsection{Reducing Bias: Double Deep Q-Network (DDQN) \cite{ref_DDQN}}
+The max operator in DQN (line \ref{state:update_yj} of Algorithm \ref{algo_dqn}), uses the same network values both to select and to evaluate an action. This setting makes it more likely to select overestimated values and resulting in overoptimistic target value estimates. Van Hasselt et al. also showed in \cite{ref_DDQN} that the DQN algorithm suffers from substantial overestimations in some games in the Atari 2600. To prevent overestimation and reduce bias, we can \textit{decouple} the \textit{action selection} from \textit{action evaluation}.
+
+Recall in Double Q-learning, two action-value functions are maintained and learned by randomly assigning transitions to update one of the two functions, resulting in two different sets of function parameters, denoted here as $\w$ and $\w'$. For computing targets, one function is used to select the greedy action and the other to evaluate its value:
+\begin{equation} \label{target_dql}
+y_t^{DoubleQ} = r_t + \gamma \hat{q}(s_{t+1}, \argmax_{a'} \hat{q}(s_{t+1}, a', \w), \w')
+\end{equation}
+Note that the action selection ($argmax$) is due to the function parameters $\w$, while the action value is evaluated by the other set of parameters $\w'$.
+
+The idea of reducing overestimations by decoupling action selection and action evaluation in computing targets can also be extended to deep Q-learning. The target network in DQN architecture provides a natural candidate for the second action-value function, without introducing additional networks. Similarly, the greedy action is generated according to the online network with parameters $\w$, but its value is estimated by the target network with parameters $\w^-$. The resulting algorithm is referred as \textit{Double DQN} \cite{ref_DDQN}, which just replaces line \ref{state:update_yj} in Algorithm \ref{algo_dqn} by the following update target:
+\begin{equation} \label{target_ddqn}
+y_t^{DoubleDQN} = r_t + \gamma \hat{q}(s_{t+1}, \argmax_{a'} \hat{q}(s_{t+1}, a', \w), \w^-)
+\end{equation}
+The update to the target network stays unchanged from DQN, and remains a periodic copy of the online network $\w$. The rest of the DQN algorithm remains intact.
+
+\subsection{Decoupling Value and Advantage: Dueling Network \cite{ref_DuelingDQN}}
+\subsubsection{The Dueling Network Architecture}
+Before we delve into dueling architecture, let's first introduce an important quantity, the \textit{advantage function}, which relates the value and Q functions (assume following a policy $\pi$):
+\begin{equation} \label{advantage}
+A^{\pi}(s,a) = Q^{\pi} (s,a) - V^\pi (s)
+\end{equation}
+Recall $V^\pi (s) = \E_{a \sim \pi(s)} [Q^\pi (s,a)] $, thus we have  $\E_{a \sim \pi(s)} [A^{\pi}(s,a)] = 0$. Intuitively, the advantage function subtracts the value of the state from the Q function to get a relative measure of the importance of each action.
+
+Like in DQN, the dueling network is also a DNN function approximator for learning the Q-function. Differently, it approximates the Q-function by \textit{decoupling} the value function and the advantage function. Figure \ref{fig_duelNet} illustrates the dueling network architecture and the DQN for comparison.
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.45]{duel_net.png}
+     \caption{Single stream Deep Q-network (top) and the dueling Q-network (bottom). The dueling network has two streams to separately estimate (scalar) state-value $V(s)$ and the advantages $A(s,a)$ for each action; the green output module implements equation (\ref{avg_module}) to combine the two streams. Both networks output Q-values for each action.}
+     \label{fig_duelNet}
+ \end{figure}
+
+The lower layers of the dueling network are convolutional as in the DQN. However, instead of using a single stream of fully connected layers for Q-value estimates, the dueling network uses two streams of fully connected layers. One stream is used to provide value function estimate given a state, while the other stream is for estimating advantage function for each valid action. Finally, the two streams are combined in a way to produce and approximate the Q-function. As in DQN, the output of the network is a vector of Q-values, one for each action.
+
+Note that since the inputs and the final outputs (combined two streams) of the dueling network are the same as that of the original DQN, the training algorithm (Algorithm \ref{algo_dqn}) introduced above for DQN and for Double DQN can also be applied here to train the dueling architecture. The separated two-stream design is based on the following observations or intuitions from the authors:
+\begin{itemize}
+\item
+For many states, it is unnecessary to estimate the value of each possible action choice. In some states, the action selection can be of great importance, but in many other states the choice of action has no repercussion on what happens next. On the other hand, the state value estimation is of significant importance for every state for a bootstrapping based algorithm like Q-learning.
+\item
+Features required to determine the value function may be different than those used to accurately estimate action benefits.
+\end{itemize}
+
+Combing the two streams of fully connected layers for Q-value estimate is not a trivial task. This aggregating module (shown in \textit{green} lines in Figure \ref{fig_duelNet}), in fact, requires very thoughtful design, which we will see in the next subsection.
+
+\subsubsection{Q-value Estimation}
+From the definition of advantage function (\ref{advantage}), we have $Q^{\pi} (s,a) = A^{\pi}(s,a) + V^\pi (s)$, and $\E_{a \sim \pi(s)} [A^{\pi}(s,a)] = 0$. Furthermore, for a deterministic policy (commonly used in value-based deep RL), $a^* = \argmax_{a' \in A} Q(s,a')$, it follows that $Q(s,a^*) = V(s)$ and hence $A(s,a^*) = 0$. The greedily selected action has zero advantage in this case.
+
+Now consider the dueling network architecture in Figure \ref{fig_duelNet} for function approximation. Let's denote the scalar output value function from one stream of the fully-connected layers as $\hat{v}(s, \w, \wv)$, and denote the vector output advantage function from the other stream as $A(s, a, \w, \wa)$. We use $\w$ here to denote the shared parameters in the convolutional layers, and use $\wv$ and $\wa$ to represent parameters in the two different streams of fully-connected layers. Then, probably the most simple way to design the aggregating module is by following the definition:
+\begin{equation} \label{def_module}
+\hat{q}(s, a, \w, \wa, \wv) = \hat{v}(s, \w, \wv) + A(s, a, \w, \wa)
+\end{equation}
+
+The main problem with this simple design is that Equation (\ref{def_module}) is unidentifiable. Given $\hat{q}$, we cannot recover $\hat{v}$ and $A$ uniquely, e.g. adding a constant to $\hat{v}$ and subtracting the same constant from $A$ gives the same Q-value estimates. The unidentifiable issue is mirrored by poor performance in practice.
+
+To make Q-function identifiable, recall in the deterministic policy case discussed above, we can force the advantage function to have zero estimate at the chosen action. Then, we have
+\begin{equation} \label{max_module}
+\hat{q}(s, a, \w, \wa, \wv)
+= \hat{v}(s, \w, \wv) + \Big(A(s, a, \w, \wa) - \max_{a' \in A} A(s, a', \w, \wa) \Big)
+\end{equation}
+For a deterministic policy, $a^* = \argmax_{a' \in A} \hat{q}(s,a', \w, \wa, \wv) = \argmax_{a' \in A} A(s, a', \w, \wa)$, Equation (\ref{max_module}) gives $\hat{q}(s, a^*, \w, \wa, \wv) = \hat{v}(s, \w, \wv)$. Thus, the stream $\hat{v}$ provides an estimate of the value function, and the other stream $A$ generates advantage estimates.
+
+The authors in \cite{ref_DuelingDQN} also proposed an alternative aggregating module that replaces the max with a mean operator:
+\begin{equation} \label{avg_module}
+\hat{q}(s, a, \w, \wa, \wv)
+= \hat{v}(s, \w, \wv) + \Big(A(s, a, \w, \wa) - \frac{1}{|A|} \sum_{a'} A(s, a', \w, \wa) \Big)
+\end{equation}
+Although this design in some sense loses the original semantics of $\hat{v}$ and $A$, the author argued that it improves the stability of learning: the advantages only need to change as fast as the mean, instead of having to compensate any change to the advantage of the optimal action. Therefore, the aggregating module in the dueling network \cite{ref_DuelingDQN} is implemented following Equation (\ref{avg_module}). When acting, it suffices to evaluate the advantage stream to make decisions.
+
+The advantage of the dueling network lies in its capability of approximating the value function efficiently. This advantage over single-stream Q networks grows when the number of actions is large, and the dueling network achieved state-of-the-art results on Atari games as of 2016.
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%
+%% References %%
+%%%%%%%%%%%%%%%%
+\begin{thebibliography}{9}
+
+\bibitem{ref_DQN}
+Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning." Nature 518.7540 (2015): 529.
+
+\bibitem{ref_DDQN}
+Van Hasselt, Hado, Arthur Guez, and David Silver. "Deep Reinforcement Learning with Double Q-Learning." AAAI. Vol. 16. 2016.
+
+\bibitem{ref_DuelingDQN}
+Wang, Ziyu, et al. "Dueling network architectures for deep reinforcement learning." arXiv preprint arXiv:1511.06581 (2015).
+
+\bibitem{ref_atari}
+Bellemare, Marc G., et al. "The Arcade Learning Environment: An evaluation platform for general agents." J. Artif. Intell. Res.(JAIR) 47 (2013): 253-279.
+
+\bibitem{ref_cnn}
+Krizhevsky, Alex, Ilya Sutskever, and Geoffrey E. Hinton. "Imagenet classification with deep convolutional neural networks." Advances in neural information processing systems. 2012.
+
+\bibitem{ref_relu}
+Nair, Vinod, and Geoffrey E. Hinton. "Rectified linear units improve restricted boltzmann machines." Proceedings of the 27th international conference on machine learning (ICML-10). 2010.
+
+\bibitem{ref_p_replay}
+Schaul, Tom, et al. "Prioritized experience replay." arXiv preprint arXiv:1511.05952 (2015).
+
+
+
+
+
+\end{thebibliography}
+
+\end{document}

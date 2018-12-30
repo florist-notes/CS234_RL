@@ -1,0 +1,28 @@
+\newpage
+\textbf{\Large Question 6 -- Alice in Wonderland \hfill[25pts]}
+\vspace{0.5cm}
+
+\textbf{A)} $Q^*_1(s_1,\pi^*(s_1,1)) - Q^*_1(s_1,\pi(s_1,1))$
+
+\vspace{5cm}
+\textbf{B) Relating the Value Function to the $Q$-Values}
+
+Let $Q^{\pi}$ be the $Q$-values of policy $\pi$ followed by Alice. Then
+\begin{align}
+V_1^{*}(s_1) - V_1^{\pi}(s_1) & = Q_1^{*}(s_1,\pi^*(s_1,1)) - Q_1^{\pi}(s_1,\pi(s_1,1))\\
+& = Q_1^{*}(s_1,\pi^*(s_1,1)) - Q_1^{*}(s_1,\pi(s_1,1))  + Q_1^{*}(s_1,\pi(s_1,1))  - Q_1^{\pi}(s_1,\pi(s_1,1))\\
+& = Q_1^{*}(s_1,\pi^*(s_1,1)) - Q_1^{*}(s_1,\pi(s_1,1))  + V_2^{*}(s_2)  - V_2^{\pi}(s_2)\\
+& \stackrel{(\star)}{=} Q_1^{*}(s_1,\pi^*(s_1,1)) - Q_1^{*}(s_1,\pi(s_1,1))  + \sum_{t=2}^H Q_t^{*}(s_t,\pi^*(s_t,t)) - Q_t^{*}(s_t,\pi(s_t,t)) \\
+& = \sum_{t=1}^H Q_t^{*}(s_t,\pi^*(s_t,t)) - Q_t^{*}(s_t,\pi(s_t,t))
+\end{align}
+where $(\star)$ follows from the inductive hypothesis.
+
+\vspace{15cm}
+\textbf{C) Loss Due to Inaccurate $Q$-values}
+
+\begin{align*}
+V_1^{*}(s_1) - V_1^{\tilde \pi}(s_1) & =  \sum_{t=1}^H Q_t^{*}(s_t,\pi^*(s_t,t)) - Q_t^{*}(s_t,\tilde \pi(s_t,t)) \\
+ &= \sum_{t=1}^H Q_t^{*}(s_t,\pi^*(s_t,t)) - \tilde Q_t^{}(s_t,\pi^*(s_t,t)) +  \tilde Q_t^{}(s_t,\pi^*(s_t,t)) -  Q_t^{*}(s_t,\tilde \pi(s_t,t)) \\
+ & \leq \sum_{t=1}^H Q_t^{*}(s_t,\pi^*(s_t,t)) - \tilde Q_t^{}(s_t,\pi^*(s_t,t)) +  \tilde Q_t^{}(s_t,\tilde \pi(s_t,t)) -  Q_t^{*}(s_t,\tilde \pi(s_t,t)) \\
+  & \leq \sum_{t=1}^H ( \epsilon + \epsilon ) = 2\epsilon H
+\end{align*}

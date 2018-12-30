@@ -1,0 +1,1206 @@
+\documentclass{article}
+
+%%%%%%%%%%%%
+%% Config %%
+%%%%%%%%%%%%
+
+% Fill these in with the relevant information for your lecture
+\newcommand{\lecturenum}{2}
+\newcommand{\lecturetitle}{Making Good Decisions Given a Model of the World}
+\newcommand{\lecturescribe}{Rahul Sarkar, Emma Brunskill}
+
+% Set counter to the final section number from the last set of notes
+% i.e. if you want to start at section 4, put 3 here
+\setcounter{section}{2}
+
+%%%%%%%%%%%%%%
+%% Preamble %%
+%%%%%%%%%%%%%%
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[top=3cm,bottom=2cm,left=3cm,right=3cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath,amsthm,amsfonts,amssymb,amscd,bm}              % for typsetting math
+\usepackage{graphicx}                                           % for graphics
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}          % for hyperlinks (use \href)
+\usepackage{float}                                              % for H option for floats
+\usepackage[stable]{footmisc}
+\usepackage{blkarray}
+\usepackage[toc,page]{appendix}
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+%% Spacing
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{0.1in}
+
+%% Title 
+\title{CS234 Notes - Lecture \lecturenum \\ \lecturetitle }
+\author{ \lecturescribe }
+
+% Image path
+\graphicspath{ {images/lecture\lecturenum/} }
+
+% Theorems, definitions (counters reset per section)
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+
+\theoremstyle{definition}
+\newtheorem{exercise}{Exercise}[section]
+\newtheorem{definition}{Definition}[section]
+
+\theoremstyle{remark}
+\newtheorem*{solution}{Solution}
+
+% Useful macros    
+\newcommand{\E}{\mathbb{E}}                                        % for expectation
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+
+
+%%%%%%%%%%%%%%
+%% Document %%
+%%%%%%%%%%%%%%
+
+\begin{document}
+\maketitle
+
+\section{Acting in a Markov decision process}
+\label{lecture2-MDP-known}
+We begin this lecture by recalling the definitions of a \textbf{model}, \textbf{policy} and \textbf{value function} for an agent. Let the agent's state and action spaces be denoted by $S$ and $A$ respectively. We then have the following definitions:
+
+\begin{itemize}
+\item \textbf{Model} : A model is the mathematical description of the dynamics and rewards of the agent's environment, which includes the transition probabilities $P(s'|s,a)$ of being in a successor state $s' \in S$ when starting from a state $s \in S$ and taking an action $a \in A$, and the rewards $R(s,a)$ (either deterministic or stochastic) obtained by taking an action $a \in A$ when in a state $s \in S$.
+
+\item \textbf{Policy} : A policy is a function $\pi : S \rightarrow A$ that maps the agent's states to actions. Policies can be stochastic or deterministic.
+
+\item \textbf{Value function} : The value function $V^{\pi}$ corresponding to a particular policy $\pi$ and for a state $s \in S$, is the cumulative sum of future (discounted) rewards obtained by the agent, by starting from the state $s$ and following the policy.
+\end{itemize}
+
+We also recall the notion of \textbf{Markov property} from the last lecture. Consider a stochastic process $(s_0, s_1, s_2, \dots)$ evolving according to some transition dynamics. We say that the stochastic process has the Markov property if and only if $P(s_i|s_0,\dots,s_{i-1}) = P(s_i|s_{i-1})$, $\forall \; i = 1,2,\dots$, i.e. the transition probability of the next state conditioned on the history including the current state is equal to the transition probability of the next state conditioned only on the current state. In such a scenario, the current state is a sufficient statistic of history of the stochastic process, and we say that \textit{``the future is independent of the past given present.''}
+
+In this lecture, we will build on these definitions and proceed in order by first defining a \textbf{Markov process (MP)}, followed by the definition of a \textbf{Markov reward process (MRP)} and finally build on both of them to define a \textbf{Markov decision process (MDP)}. We will finish this lecture by discussing some algorithms which enable us to make good decisions when a MDP is completely known.
+
+\subsection{Markov process}
+In its most generality, a Markov process is a stochastic process that satisfies the Markov property, because of which we say that a Markov process is \textit{``memoryless''}. For the purpose of this lecture, we will make two additional assumptions that are very common in the reinforcement learning setting:
+
+\begin{itemize}
+\item \textit{Finite state space} : The state space of the Markov process is finite. This means that for the Markov process $(s_0, s_1, s_2, \dots)$, there is a state space $S$ with $|S| < \infty$, such that for all realizations of the Markov process, we have $s_i \in S$ for all $i = 1,2,\dots$ .
+\item \textit{Stationary transition probabilities} : The transition probabilities are time independent. Mathematically, this means the following:
+\begin{equation}
+P(s_i = s' | s_{i-1} = s) = P(s_j = s' | s_{j-1} = s) \;\;,\;\; \forall \; s,s' \in S \;\;,\;\; \forall \; i,j = 1,2,\dots \;.
+\label{eq:stationary_def}
+\end{equation}
+\end{itemize}
+Unless otherwise specified, we will always assume that these two properties hold for any Markov process that we will encounter in this lecture, including for any Markov reward process and any Markov decision process to be defined later by adding progressively extra structure to the Markov process. Note that a Markov process satisfying these assumptions is also sometimes called a \textit{``Markov chain''}, although the precise definition of a Markov chain varies.
+
+For the Markov process, these assumptions lead to a nice characterization of the transition dynamics in terms of a \textit{transition probability matrix} $\mathbf{P}$ of size $|S|\times|S|$, whose $(i,j)$ entry is given by $P_{ij}=P(j|i)$, with $i,j$ referring to the states of $S$ ordered arbitrarily. It should be noted that the matrix $\mathbf{P}$ is a non-negative row-stochastic matrix, i.e. the sum of each row equals 1.
+
+Henceforth, we will thus define a Markov process by the tuple $(S,\mathbf{P})$, which consists of the following:
+\begin{itemize}
+\item $S$ : A finite state space.
+\item $\mathbf{P}$ : A transition probability model that specifies $P(s'|s)$.
+\end{itemize}
+
+\begin{exercise}
+(a) Prove that $\mathbf{P}$ is a row-stochastic matrix. (b) Show that 1 is an eigenvalue of any row-stochastic matrix, and find a corresponding eigenvector. (c) Show that any eigenvalue of a row-stochastic matrix has maximum absolute value 1.
+\label{ex-Pstochastic}
+\end{exercise}
+
+\begin{exercise}
+The \textit{max-norm} or \textit{infinity-norm} of a vector $x \in \mathbb{R}^{n}$ is denoted by $||x||_{\infty}$, and defined as $||x||_{\infty} = \max_i |x_i|$, i.e. it is the component of $x$ with the maximum absolute value. For any matrix $\mathbf{A} \in \mathbb{R}^{m \times n}$, define the following quantity 
+\begin{equation}
+||\mathbf{A}||_{\infty} = \underset{x \neq 0}{\underset{x \in \mathbb{R}^n}{\sup}}\frac{||\mathbf{A}x||_{\infty}}{||x||_{\infty}} \;\; .
+\label{eq:induced-max-norm}
+\end{equation}
+(a) Prove that $||\mathbf{A}||_{\infty}$ satisfies all the properties of a norm. The quantity so defined is called the \textit{``induced infinity norm''} of a matrix.\\
+\\
+(b) Prove that
+\begin{equation}
+||\mathbf{A}||_{\infty} = \underset{i = 1,\dots,m}{\max} \left(\sum_{j=1}^{n}|A_{ij}| \right) \;\;.
+\label{eq:induced-max-norm1}
+\end{equation}
+(c) Conclude that if $\mathbf{A}$ is row-stochastic, then $||\mathbf{A}||_{\infty} = 1$.\\
+\\
+(d) Prove that for every $x \in \mathbb{R}^{n}$, $||\mathbf{A}x||_{\infty} \leq ||\mathbf{A}||_{\infty}||x||_{\infty}$.
+\label{ex-Pstochastic-norm}\\
+\end{exercise}
+
+\subsubsection{Example of a Markov process : Mars Rover}
+\label{MP-example-subsubsection}
+To practice our understanding, consider the Markov process shown in Figure \ref{fig:MP}. Our agent is a Mars rover whose state space is given by $S = \{S1,\;S2,\;S3,\;S4,\;S5,\;S6,\;S7\}$. The transition probabilities of the states are indicated in the figure with arrows. So for example if the rover is in the state $S4$ at the current time step, in the next time step it can go to the states $S3,\;S4,\;S5$ with probabilities given by $0.4,\;0.2,\;0.4$ respectively.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.4]{mars_rover.png}
+    \caption{Mars Rover Markov process.}
+    \label{fig:MP}
+\end{figure}
+
+Assuming that the rover starts out in state $S4$, some possible episodes of the Markov process could look as follows:
+\begin{itemize}
+\item[--] $S4,\; S5,\; S6,\; S7,\; S7,\; S7,\; \dots$
+\item[--] $S4,\; S4,\; S5,\; S4,\; S5,\; S6,\; \dots$
+\item[--] $S4,\; S3,\; S2,\; S1,\; \dots$
+\end{itemize}
+
+\begin{exercise}
+Consider the example of a Markov process given in Figure \ref{fig:MP}. (a) Write down the transition probability matrix for the Markov process.
+\label{ex-MP-example}
+\end{exercise}
+
+\subsection{Markov reward process}
+A Markov reward process is a Markov process, together with the specification of a reward function and a discount factor. It is formally represented using the tuple $(S,\mathbf{P},R,\gamma)$ which are listed below:
+\begin{itemize}
+\item $S$ : A finite state space.
+\item $\mathbf{P}$ : A transition probability model that specifies $P(s'|s)$.
+\item $R$ : A reward function that maps states to rewards (real numbers), i.e $R : S \rightarrow \mathbb{R}$.
+\item $\gamma$: Discount factor between $0$ and $1$.
+\end{itemize}
+
+We have already explained the roles played by $S$ and $\mathbf{P}$ in the context of a Markov process. We will next explain the concept of the reward function $R$ and the discount factor $\gamma$, which are specific to the Markov reward process. Additionally, we will also define and explain a few quantities which are important in this context, such as the horizon, return and state value function of a Markov reward process.
+
+\subsubsection{Reward function}
+In a Markov reward process, whenever a transition happens from a current state $s$ to a successor state $s'$, a reward is obtained depending on the current state $s$. Thus for the Markov process $(s_0, s_1, s_2, \dots)$, each transition $s_i \rightarrow s_{i+1}$ is accompanied by a reward $r_i$ for all $i = 0,1,\dots$, and so a particular episode of the Markov reward process is represented as $(s_0, r_0, s_1, r_1, s_2, r_2, \dots)$. We should note that these rewards can be either deterministic or stochastic. For a state $s \in S$, we define the expected reward $R(s)$ by:
+\begin{equation}
+R(s) = \E[r_0|s_0 = s],
+\label{eq:expexted_reward_func}
+\end{equation}
+that is $R(s)$ is the expected reward obtained during the first transition, when the Markov process starts in state $s$. Just like the assumption of stationary transition probabilities, going forward we will also assume the following:
+\begin{itemize}
+\item \textit{Stationary rewards} : The rewards in a Markov reward process are stationary which means that they are time independent. In the deterministic case, mathematically this means that for all realizations of the process we must have that:
+\begin{equation}
+r_i = r_j \; , \; \text{whenever} \; s_i = s_j \;\; \forall \; i,j = 0,1,\dots \;,
+\label{eq:stationary_rewards_deterministic}
+\end{equation}
+while in the case of stochastic rewards we require that the cumulative distribution functions (cdf) of the rewards conditioned on the current state be time independent. This is written mathematically as:
+\begin{equation}
+F(r_i | s_i = s) = F(r_j | s_j = s) \;\;,\;\; \forall \; s \in S \;\;,\;\; \forall \; i,j = 0,1,\dots \;,
+\label{eq:stationary_rewards_stochastic}
+\end{equation}
+where $F(r_i | s_i = s)$ denotes the cdf of $r_i$ conditioned on the state $s_i = s$. Notice that as a consequence of \eqref{eq:stationary_rewards_deterministic} and \eqref{eq:stationary_rewards_stochastic}, we furthermore have the following result about the expected rewards:
+\begin{equation}
+R(s) = \E[r_i|s_i = s] \;\;,\;\; \forall \; i = 0,1,\dots \;.
+\label{eq:expected_reward_func1}
+\end{equation}
+\end{itemize}
+
+We will see that as long as the ``stationary rewards'' assumption is true about a Markov reward process, only the expected reward $R$ matters in the things that we will be interested in, and we can depose of the quantities $r_i$ entirely. Hence going forward, the word ``reward'' will be used interchangeably to mean both $R$ and $r_i$, and should be easily understood from context. Finally notice that $R$ can be represented as a vector of dimension $|S|$, in the case of a finite state space $S$.
+
+\begin{exercise}
+(a) Under the assumptions of stationary transition probabilities and rewards, prove equation \eqref{eq:expected_reward_func1}.
+\label{ex-Rstationary}
+\end{exercise}
+
+\subsubsection{Horizon, Return and Value function}
+We next define the notions of the horizon, return and value function for a Markov reward process. 
+
+\begin{itemize}
+\item \textbf{Horizon} : The horizon $H$ of a Markov reward process is defined as the number of time steps in each episode (realization) of the process. The horizon can be finite or infinite. If the horizon is finite, then the process is also called a \textit{finite Markov reward process}.
+\item \textbf{Return} : The return $G_t$ of a Markov reward process is defined as the discounted sum of rewards starting at time $t$ up to the horizon $H$, and is given by the following mathematical formula:
+\begin{equation}
+G_t = \sum_{i=t}^{H-1}\gamma^{i-t} r_i \;\;,\;\; \forall \; 0 \leq t \leq H-1.
+\label{eq:return_mrp}
+\end{equation}
+\item \textbf{State value function} : The state value function $V_t(s)$ for a Markov reward process and a state $s \in S$ is defined as the expected return starting from state $s$ at time $t$, and is given by the following expression:
+\begin{equation}
+V_t(s) = \E[G_t|s_t = s].
+\label{eq:valuefunc_mrp}
+\end{equation}
+Notice that when the horizon $H$ is infinite, this definition \eqref{eq:valuefunc_mrp} together with the stationary assumptions of the rewards and transition probabilities imply that $V_i(s) = V_j(s)$ for all $i,j = 0,1,\dots \;$, and thus in this case we will define:
+\begin{equation}
+V(s) = V_0(s) \;.
+\label{eq:valuefunc_mrp_infinite}
+\end{equation}
+\end{itemize}
+
+\begin{exercise}
+(a) If the assumptions of stationary transition probabilities and stationary rewards hold, and if the horizon $H$ is infinite, then using the definitions in \eqref{eq:return_mrp} and \eqref{eq:valuefunc_mrp} prove that $V_i(s) = V_j(s)$ for all $i,j = 0,1,\dots \;$.
+\label{ex-infinite-horizon-value}
+\end{exercise}
+
+\subsubsection{Discount factor}
+Notice that in the definition of return $G_t$ in \eqref{eq:return_mrp}, if the horizon is infinite and $\gamma = 1$, then the return can become infinite even if the rewards are all bounded. If this happens, then the value function $V(s)$ can also become infinite. Such problems cannot then be solved using a computer. To avoid such mathematical difficulties and make the problems computationally tractable we set $\gamma < 1$, which exponentially weighs down the contribution of rewards at future times, in the calculation of the return in \eqref{eq:return_mrp}. This quantity $\gamma$ is called the \textit{discount factor}. Other than for purely computational reasons, it should be noted that humans behave in much the same way - we tend to put more importance in immediate rewards over rewards obtained at a later time. The interpretation of $\gamma$ is that when $\gamma = 0$, we only care about the immediate reward, while when $\gamma = 1$, we put as much importance on future rewards as compared the present. Finally, notice that if the horizon of the Markov reward process is finite, i.e. $H < \infty$, then we can set $\gamma = 1$, as the returns and value functions are always finite.
+
+\begin{exercise}
+Consider a finite horizon Markov reward process, with bounded rewards. Specifically assume that $\exists \; M \in (0,\infty)$ such that $|r_i| \leq M \;\; \forall \; i$ and across all episodes (realizations). (a) Show that the return for any episode $G_t$ as defined in \eqref{eq:return_mrp} is bounded. (b) Can you suggest a bound? Specifically can you find $C(M,\gamma,t,H)$ such that $|G_t| \leq C$ for any episode?
+\label{ex-discount-finite}
+\end{exercise}
+
+\begin{exercise}
+Consider an infinite horizon Markov reward process, with bounded rewards and $\gamma < 1$. (a) Prove that the return for any episode $G_t$ as defined in \eqref{eq:return_mrp} converges to a finite limit. \textit{Hint: Consider the partial sums $S_N = \sum_{i=t}^{N}\gamma^{i-t} r_i$ for $N \geq t$. Show that $\{S_N\}_{N \geq t}$ is a Cauchy sequence.}
+\label{ex-discount-infinite}
+\end{exercise}
+
+\subsubsection{Example of a Markov reward process : Mars Rover}
+\label{MRP-example-subsubsection}
+As an example, consider the Markov reward process in Figure \ref{fig:MRP}. The states and the transition probabilities of this process are exactly the same as in the Mars rover Markov process example of Exercise \ref{ex-MP-example}. The rewards obtained by executing an action from any of the states $\{S2,\;S3,\;S4,\;S5,\;S6\}$ is $0$, while any moves from states $S1,\;S7$ yield rewards $1,\;10$ respectively. The rewards are stationary and deterministic. Assume $\gamma = 0.5$ in this example.
+
+For illustration, let us again assume that the rover is initially in state $S4$. Consider the case when the horizon is finite : $H=4$.  A few possible episodes in this case with the return $G_0$ in each case are given below:
+\begin{itemize}
+\item[--] $S4,\; S5,\; S6,\; S7,\; S7\; : G_0 = 0 + 0.5 \ast 0 + 0.5^2 \ast 0 + 0.5^3 \ast 10 = 1.25$
+\item[--] $S4,\; S4,\; S5,\; S4,\; S5\; : G_0 = 0 + 0.5 \ast 0 + 0.5^2 \ast 0 + 0.5^3 \ast 0 = 0$
+\item[--] $S4,\; S3,\; S2,\; S1,\; S2\; : G_0 = 0 + 0.5 \ast 0 + 0.5^2 \ast 0 + 0.5^3 \ast 1 = 0.125$
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.4]{mars_rover_mrp.png}
+    \caption{Mars Rover Markov reward process.}
+    \label{fig:MRP}
+\end{figure}
+
+\subsection{Computing the value function of a Markov reward process}
+In this section we give three different ways to compute the value function of a Markov reward process:
+\begin{itemize}
+\item Simulation
+\item Analytic solution
+\item Iterative solution
+\end{itemize}
+
+\subsubsection{Monte Carlo simulation}
+The first method involves generating a large number of episodes using the transition probability model and rewards of the Markov reward process. For each episode, the returns can be calculated which can then be averaged to give the average returns. Concentration inequalities bound how quickly the averages concentrate to the mean value. For a Markov reward process $M = (S,\mathbf{P},R,\gamma)$, state $s$, time $t$, and the number of simulation episodes $N$, the pseudo-code of the simulation algorithm is given in Algorithm \ref{alg:mrp1}.
+
+\begin{algorithm}
+\caption{Monte Carlo simulation to calculate MRP value function}\label{alg:mrp1}
+\begin{algorithmic}[1]
+\Procedure{Monte Carlo Evaluation}{$M,s,t,N$}
+\State $i\gets 0$
+\State $G_t\gets 0$
+\While{$i\not=N$}
+\State Generate an episode, starting from state $s$ and time $t$
+\State Using the generated episode, calculate return $g \gets \sum_{i=t}^{H-1}\gamma^{i-t} r_i$ 
+\State $G_t\gets G_t + g$
+\State $i\gets i + 1$
+\EndWhile\label{mrp1label}
+\State $V_t(s) \gets G_t / N$
+\State \textbf{return} $V_t(s)$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Analytic solution}
+This method works only for an infinite horizon Markov reward processes with $\gamma < 1$. Using \eqref{eq:valuefunc_mrp}, the fact that the horizon is inifnite, and using the stationary Markov property we have for any state $s \in S$:
+\begin{equation}
+\begin{split}
+V(s) &\stackrel{(a)}{=} V_0(s) = \E[G_0|s_0 = s] = \E \left[\sum_{i=0}^{\infty}\gamma^{i} r_i \bigg|s_0 = s \right] = \E [r_0 | s_0 = s] + \sum_{i=1}^{\infty}\gamma^{i} \E [r_i|s_0 = s] \\
+&\stackrel{(b)}{=} \E [r_0 | s_0 = s] + \sum_{i=1}^{\infty}\gamma^{i} \left( \sum_{s' \in S}P(s_1 = s' | s_0 = s) \E [r_i|s_0 = s, s_1 = s'] \right) \\
+&\stackrel{(c)}{=} \E [r_0 | s_0 = s] + \gamma \sum_{s' \in S}P(s'|s) \E \left[\sum_{i=0}^{\infty}\gamma^{i} r_i \bigg|s_0 = s' \right] \stackrel{(d)}{=} R(s) + \gamma \sum_{s' \in S}P(s'|s)V(s') \;\;,
+\end{split}
+\label{eq:mrp_bellman_proof}
+\end{equation}
+where (a) follows from \eqref{eq:return_mrp}, \eqref{eq:valuefunc_mrp}, and \eqref{eq:valuefunc_mrp_infinite}, (b) follows by the law of total expectation, (c) follows from the Markov property and due to stationarity, and (d) follows from \eqref{eq:expexted_reward_func}. There is a nice interpretation of the final result of \eqref{eq:mrp_bellman_proof}, namely that the first term $R(s)$ is the immediate reward while the second term $\gamma \sum_{s' \in S}P(s'|s)V(s')$ is the discounted sum of future rewards. The value function $V(s)$ is the sum of these two quantities. As $|S| < \infty$, it is possible to write this equation in matrix form as:
+\begin{equation}
+V = R + \gamma \mathbf{P}V \;,
+\label{eq:mrp_bellman_matrix}
+\end{equation}
+
+where $\mathbf{P}$ is the transition probability matrix introduced earlier, and $R$ and $V$ are column vectors of dimension $|S|$ formed by stacking all the values $R(s)$ and $V(s)$ respectively, for all $s \in S$. Equation \eqref{eq:mrp_bellman_matrix} can be rearranged to give $(\mathbf{I} - \gamma \mathbf{P})V = R$, which has an analytical solution $V = (\mathbf{I} - \gamma \mathbf{P})^{-1}R$. Notice that as $\gamma < 1$ and $\mathbf{P}$ is row-stochastic, $(\mathbf{I} - \gamma \mathbf{P})$ is non-singular and hence can be inverted. Thus \eqref{eq:mrp_bellman_matrix} always has a solution and the solution is unique. However, the computational cost of the analytical method is $O(|S|^3)$, as it involves a matrix inverse and hence it is completely unsuitable for cases where the state space is very large.
+
+\begin{exercise}
+Consider the matrix $(\mathbf{I} - \gamma \mathbf{P})$. (a) Show that $1-\gamma$ is an eigenvalue of this matrix, and find a corresponding eigenvector. (b) For $0 < \gamma < 1$, use the result of Exercise \ref{ex-Pstochastic} to conclude that $(\mathbf{I} - \gamma \mathbf{P})$ is non-singular, and thus invertible.
+\label{ex-invertible-matrix}
+\end{exercise}
+
+\begin{exercise}
+Consider the Markov reward process introduced in the example in section \ref{MRP-example-subsubsection}. (a) If the horizon $H$ is infinite, calculate the value function for all the states.
+\label{ex-MRP-example}
+\end{exercise}
+
+\subsubsection{Iterative solution}
+We now give an iterative solution to evaluate the value function in the infinite horizon case (with $\gamma < 1$) and a dynamic programming based solution for the finite horizon case. The surprising thing is that both the algorithms look surprisingly similar, to the point that it is hard to tell the difference. We first consider the finite horizon case. It is easy to prove (by following almost exactly the same proof of \eqref{eq:mrp_bellman_proof}) that the analog of equation \eqref{eq:mrp_bellman_proof} in the finite horizon case is given by:
+\begin{equation}
+\begin{split}
+V_t(s) &= R(s) + \gamma \sum_{s' \in S} P(s'|s)V_{t+1}(s') \;\;,\;\; \forall \; t = 0,\dots,H-1, \\
+V_H(s) &= 0 \;\;.
+\end{split}
+\label{eq:mrp_bellman_finite}
+\end{equation}
+
+\begin{exercise}
+Prove equations \eqref{eq:mrp_bellman_finite} for a finite horizon Markov reward process.
+\label{ex-bellman-finite}
+\end{exercise}
+
+These equations immediately lend themselves to a dynamic programming solution whose pseudo-code is outlined in Algorithm \ref{alg:mrp2}. The algorithm takes as input a finite horizon Markov reward process $M = (S,\mathbf{P},R,\gamma)$, and computes the value function for all states and at all times.
+
+\begin{algorithm}
+\caption{Dynamic programming algorithm to calculate finite MRP value function}\label{alg:mrp2}
+\begin{algorithmic}[1]
+\Procedure{Dynamic Programming Value Function Evaluation}{$M$}
+\State For all states $s \in S$, $V_H(s)\gets 0$
+\State $t\gets H-1$
+\While{$t \geq 0$}
+\State For all states $s \in S$, $V_t(s) = R(s) + \gamma \sum_{s' \in S} P(s'|s)V_{t+1}(s')$
+\State $t\gets t - 1$
+\EndWhile\label{mrp2label}
+\State \textbf{return} $V_t(s)$ for all $s \in S$ and $t = 0,\dots,H$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Let us now look at the iterative algorithm for the infinite horizon case with $\gamma < 1$. The pseudo-code for this algorithm is presented in Algorithm \ref{alg:mrp3}. The algorithm takes as input a Markov reward process $M = (S,\mathbf{P},R,\gamma)$, and a tolerance $\epsilon$, and computes the value function for all states.
+
+\begin{algorithm}
+\caption{Iterative algorithm to calculate MRP value function}\label{alg:mrp3}
+\begin{algorithmic}[1]
+\Procedure{Iterative Value Function Evaluation}{$M,\epsilon$}
+\State For all states $s \in S$, $V'(s)\gets 0$, $V(s) \gets \infty$
+\While{$||V - V'||_{\infty} > \epsilon$}
+\State $V \gets V'$
+\State For all states $s \in S$, $V'(s) = R(s) + \gamma \sum_{s' \in S} P(s'|s)V(s')$
+\EndWhile\label{mrp3label}
+\State \textbf{return} $V'(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+For both these algorithms \ref{alg:mrp2} and \ref{alg:mrp3}, the computational cost of each loop is $O(|S|^2)$. This is an improvement over the $O(|S|^3)$ cost of the analytical method in the inifinite horizon case, however one may need quite a few iterations to converge depending on the tolerance level $\epsilon$.
+
+While the proof of correctness of algorithm \ref{alg:mrp2} in the finite horizon case is obvious, for the infinite horizon case it is not so clear if algorithm \ref{alg:mrp3} always converges, and if it does whether it converges to the correct solution $(\mathbf{I} - \gamma \mathbf{P})^{-1}R$. The answers to both these questions are affirmative as is shown by the following theorem.
+
+\begin{theorem}
+Algorithm \ref{alg:mrp3} always terminates. Moreover, if the output of the algorithm is $V'$ and we denote the true solution as $V = (\mathbf{I} - \gamma \mathbf{P})^{-1}R$, then we have the error estimate $||V' - V||_{\infty} \leq \frac{\epsilon \gamma}{1 - \gamma}$.
+\label{th-mrp3-termination}
+\end{theorem}
+
+\begin{proof}
+We consider the vector space $\mathbb{R}^{|S|}$ equipped with the $||\cdot||_{\infty}$ norm (see Exercise \ref{ex-Pstochastic-norm}), and recall that $\mathbb{R}^{|S|}$ so constructed is a Banach space (see Section \ref{contraction-map} for a discussion on normed vector spaces). We start by noticing that both $V$ and all the iterates of algorithm \ref{alg:mrp3} are elements of $\mathbb{R}^{|S|}$.
+
+Define the operator $B : \mathbb{R}^{|S|} \rightarrow \mathbb{R}^{|S|}$ \textit{(also known as the ``Bellman backup'' operator)} that acts on an element $U \in \mathbb{R}^{|S|}$ as follows
+\begin{equation}
+(BU)(s) = R(s) + \gamma \sum_{s' \in S} P(s'|s)U(s') \;\;,\;\; \forall \; s \in S,
+\label{eq:mrp3-term-proof-eq1}
+\end{equation}
+which can be written in compact matrix-vector notation as 
+\begin{equation}
+BU = R + \gamma \mathbf{P}U \;.
+\label{eq:mrp3-term-proof-eq2}
+\end{equation}
+
+We first prove that the operator $B$ is a strict contraction (defined in Definition \ref{def-contraction-map}). For every $U_1, U_2 \in \mathbb{R}^{|S|}$, using \eqref{eq:mrp3-term-proof-eq2} we have
+\begin{equation}
+\begin{split}
+||BU_1 - BU_2||_{\infty} &= \gamma ||\mathbf{P}U_1 - \mathbf{P}U_2||_{\infty} = \gamma ||\mathbf{P}(U_1 - U_2)||_{\infty} \\
+& \leq \gamma ||\mathbf{P}||_{\infty} ||U_1 - U_2||_{\infty} = \gamma ||U_1 - U_2||_{\infty} \;,
+\end{split}
+\label{eq:mrp3-term-proof-eq3}
+\end{equation}
+where the second step follows by Exercise \ref{ex-Pstochastic-norm}, and thus as $0 < \gamma < 1$, we conclude that $B$ is a strict contraction on $\mathbb{R}^{|S|}$. Thus by the contraction mapping theorem (Theorem \ref{th-contraction-mapping}), we conclude that $B$ has a unique fixed point. From \eqref{eq:mrp3-term-proof-eq2} and \eqref{eq:mrp_bellman_matrix} it also follows that $BV = R + \gamma \mathbf{P}V = V$, and hence $V$ is a fixed point of $B$, and hence by uniqueness it must also be the only fixed point.
+
+We next consider the iterates produced by algorithm \ref{alg:mrp3} (if it is not allowed to terminate) and denote them by $\{V_k\}_{k \geq 1}$. Notice that these iterates satisfy the following relations
+\begin{equation}
+V_k = 
+\begin{cases}
+0 \;\; & \text{if} \;\; k = 1, \\
+BV_{k-1} \;\; & \text{if} \;\; k > 1 \\
+\end{cases}
+\;\;.
+\label{eq:mrp3-term-proof-eq4}
+\end{equation}
+By Theorem \ref{th-contraction-mapping}, we further conclude that $\{V_k\}_{k \geq 1}$ is a Cauchy sequence, and hence by Definition \ref{def-cauchy-seq} we conclude that $\exists \; N \geq 1$, such that $||V_m - V_n||_{\infty} < \epsilon$ for all $m,n > N$. This completes the proof that algorithm \ref{alg:mrp3} terminates. Notice that the contraction mapping theorem (Theorem \ref{th-contraction-mapping}) also implies that $V_k \rightarrow V$ (see Definition \ref{def-convergence} for exact notion of convergence).
+
+To prove the error bound when the algorithm terminates, let the algorithm terminate after $k$ iterations, and so the last iterate is $V_{k+1}$. We then have $||V_{k+1} - V_{k}||_{\infty} \leq \epsilon$. Then using the triangle inequality and the fact that $V_{k+1} = BV_{k}$ we get,
+\begin{equation}
+\begin{split}
+||V_{k} - V||_{\infty} & \leq ||V_{k} - V_{k+1}||_{\infty} + ||V_{k+1} - V||_{\infty} = ||V_{k} - V_{k+1}||_{\infty} + ||BV_{k} - BV||_{\infty} \\
+&\leq ||V_{k} - V_{k+1}||_{\infty} + \gamma ||V_{k} - V||_{\infty} = \epsilon + \gamma ||V_{k} - V||_{\infty} \;\;,
+\end{split}
+\label{eq:mrp3-term-proof-eq5}
+\end{equation}
+and so $||V_{k} - V||_{\infty} \leq \frac{\epsilon}{1 - \gamma}$. This finally allows us to conclude that 
+\begin{equation}
+||V_{k+1} - V||_{\infty} = ||BV_{k} - BV||_{\infty} \leq \gamma ||V_{k} - V||_{\infty} \leq \frac{\epsilon \gamma}{1 - \gamma}\;\;.
+\label{eq:mrp3-term-proof-eq6}
+\end{equation}
+\end{proof}
+
+\begin{exercise}
+Suppose that in algorithm \ref{alg:mrp3}, the initialization step is changed so $V'$ is set randomly (all entries finite), instead of $V' \leftarrow 0$. (a) Will the algorithm still converge? (b) Does the algorithm still retain the same error estimate of Theorem \ref{th-mrp3-termination} ?
+\label{ex-mrp3-nonzero-init}
+\end{exercise}
+
+\begin{exercise}
+Suppose the assumptions of Theorem \ref{th-mrp3-termination} hold. Using the same notations as in the theorem prove the following:\\
+(a) For all $k \geq 1$, $||V_k - V||_{\infty} \leq \gamma^{k-1}||V||_{\infty}$ \;.\\
+(b) $||V_2||_{\infty} \leq (1 + \gamma) ||V||_{\infty}$ \;.\\
+(c) For all $m,n \geq 1$, $||V_m - V_n||_{\infty} \leq (\gamma^{m-1} + \gamma^{n-1})||V||_{\infty}$ \;.
+\label{ex-mrp3-maxchange}
+\end{exercise}
+
+\subsection{Markov decision process}
+We are now in a position to define a Markov decision process (MDP). A MDP inherits the basic structure of a Markov reward process with some important key differences, together with the specification of a set of actions that an agent can take from each state. It is formally represented using the tuple $(S,A,P,R,\gamma)$ which are listed below:
+\begin{itemize}
+\item $S$ : A finite state space.
+\item $A$ : A finite set of actions which are available from each state $s$.
+\item $P$ : A transition probability model that specifies $P(s'|s,a)$.
+\item $R$ : A reward function that maps a state-action pair to rewards (real numbers), i.e. $R : S \times A \rightarrow \mathbb{R}$.
+\item $\gamma$: Discount factor $\gamma \in [0,1]$.
+\end{itemize}
+
+Some of these quantities have been explained in the context of a Markov reward process. However in the context of a MDP, there are important differences that we need to mention. The basic model of the dynamics is that there is a state space $S$, and an action space $A$, both of which we will consider to be finite. The agent starts from a state $s_i$ at time $i$, chooses an action $a_i$ from the action space, obtains a reward $r_i$ and then reaches a successor state $s_{i+1}$. An episode of a MDP is thus represented as $(s_0,a_0,r_0,s_1,a_1,r_1,s_2,a_2,r_2,\dots)$.
+
+Unlike in the case of a Markov process or a Markov reward process where the transition probability was only a function of the successor state and the current state, in the case of a MDP the transition probabilities at time $i$ are a function of the successor state $s_{i+1}$ along with both the current state $s_i$ and the action $a_i$, written as $P(s_{i+1}|s_i,a_i)$. We still assume the principle of stationary transition probabilities which in the context of a MDP is written mathematically as
+
+\begin{equation}
+P(s_i = s' | s_{i-1} = s, a_{i-1} = a) = P(s_j = s' | s_{j-1} = s, a_{j-1} = a),
+\label{eq:stationary_def_mdp}
+\end{equation}
+for all $s,s' \in S$, for all $a \in A$, and for all $i,j = 1,2,\dots \;$.
+
+The reward $r_i$ at time $i$ depends on both $s_i$ and $a_i$ in the case of a MDP, in contrast to a Markov reward process where it depended only on the current state. These rewards can be stochastic or deterministic, but just like in the case of a Markov reward process, we will assume that the rewards are stationary and the only relevant quantity will be the expected reward which we will denote by $R(s,a)$ for a fixed state $s$ and action $a$, and defined below:
+\begin{equation}
+R(s,a) = \E[r_i|s_i = s, a_i = a] \;\;,\;\; \forall \; i = 0,1,\dots \;.
+\label{eq:expexted_reward_func_mdp}
+\end{equation}
+
+The notions of the \textbf{discount factor} $\gamma$, \textbf{horizon} $H$ and \textbf{return} $G_t$ for a MDP are exactly equivalent to those in the case of a Markov reward process. However the notion of a \textbf{state value function} is slightly modified for a MDP as explained next.
+
+\subsubsection{MDP policies and policy evaluation}
+\label{MDP-MRP-equiv-subsubsection}
+Given a MDP, a policy for the MDP specifies what action to take in each state. A policy can either be deterministic or stochastic. To cover both these cases, we will consider a policy to be a probability distribution over actions given the current state. It is important to note that the policy may be varying with time, which is especially true in the case of finite horizon MDPs. We will denote a generic policy by the boldface symbol $\bm{\pi}$, defined as the infinite dimensional tuple $\bm{\pi} = (\pi_0,\pi_1,\dots)$, where $\pi_t$ refers to the policy at time $t$. We will call policies that do not vary with time \textit{``stationary policies''}, and indicate them as $\pi$, i.e. in this case $\bm{\pi} = (\pi,\pi,\dots)$. For a stationary policy $\pi$, if at time $t$ the agent is in state $s$, it will choose an action $a$ with probability given by $\pi(a|s)$ and this probability does not depend on $t$, while for a non-stationary policy the probability will depend on time $t$ and we will be denoted by $\pi_t(a|s)$.
+
+Given a policy $\bm{\pi}$ one can define two quantities : \textit{the state value function} and \textit{the state-action value function} for the MDP corresponding to the policy $\bm{\pi}$, as shown below:
+
+\begin{itemize}
+\item \textbf{State value function} : The state value function $V^{\bm{\pi}}_t(s)$ for a state $s \in S$ is defined as the expected return starting from the state $s_t=s$ at time $t$ and following policy $\bm{\pi}$, and is given by the expression $V^{\bm{\pi}}_t(s) = \E_{\bm{\pi}}[G_t|s_t = s]$, where $\E_{\bm{\pi}}$ denotes that the expectation is taken with respect to the policy $\bm{\pi}$. Frequently we will drop the subscript $\bm{\pi}$ in the expectation to simplify notation going forward. Thus $\E$ will mean expectation with respect to the policy unless specified otherwise, and so we can write
+\begin{equation}
+V^{\bm{\pi}}_t(s) = \E [G_t|s_t = s] \;.
+\label{eq:s_valuefunc_mdp}
+\end{equation}
+
+Notice that when the horizon $H$ is infinite, this definition \eqref{eq:s_valuefunc_mdp} together with the stationary assumptions of the rewards, transition probabilities and policy imply that for all $s \in S$, $V^{\bm{\pi}}_i(s) = V^{\bm{\pi}}_j(s)$ for all $i,j = 0,1,\dots \;$, and thus in this case we will define in a manner analogous to the case of a Markov reward process:
+\begin{equation}
+V^{\pi}(s) = V^{\bm{\pi}}_0(s) \;.
+\label{eq:s_valuefunc_mdp_infinite}
+\end{equation}
+
+\item \textbf{State-action value function} : The state-action value function $Q^{\bm{\pi}}_t(s,a)$ for a state $s$ and action $a$ is defined as the expected return starting from the state $s_t=s$ at time $t$ and taking the action $a_t=a$, and then subsequently following the policy $\bm{\pi}$. It is written mathematically as
+\begin{equation}
+Q^{\bm{\pi}}_t(s,a) = \E [G_t|s_t = s, a_t = a] \;.
+\label{eq:sa_valuefunc_mdp}
+\end{equation}
+
+In the infinite horizon case, similar to the state value function, the stationary assumptions about the rewards,  transition probabilities and policy imply that for all $s \in S$ and $a \in A$, $Q^{\bm{\pi}}_i(s,a) = Q^{\bm{\pi}}_j(s,a)$ for all $i,j = 0,1,\dots \;$, which motivates the following definition
+\begin{equation}
+Q^{\pi}(s,a) = Q^{\bm{\pi}}_0(s,a) \;.
+\label{eq:sa_valuefunc_mdp_infinite}
+\end{equation}
+\end{itemize}
+
+\begin{exercise}
+Consider a stationary policy $\bm{\pi} = (\pi,\pi,\dots)$. If the assumptions of stationary transition probabilities and stationary rewards hold, and if the horizon $H$ is infinite, then using the definitions in \eqref{eq:s_valuefunc_mdp} and \eqref{eq:sa_valuefunc_mdp} prove that for all $s \in S$ and $a \in A$, (a) $V^{\bm{\pi}}_i(s) = V^{\bm{\pi}}_j(s)$, and (b) $Q^{\bm{\pi}}_i(s,a) = Q^{\bm{\pi}}_j(s,a)$ for all $i,j = 0,1,\dots \;$.
+\label{ex-infinite-horizon-value-mdp}
+\end{exercise}
+
+In the infinite horizon case, the assumptions about stationary transition probabilities and rewards lead to the following important identity connecting the state value function and the state-action value function for a stationary policy $\pi$ :
+\begin{equation}
+\begin{split}
+Q^{\pi}(s,a) &\stackrel{(a)}{=} Q^{\pi}_0(s,a) = \E[G_0|s_0 = s, a_0 = a] = \E \left[\sum_{i=0}^{\infty}\gamma^{i} r_i \bigg|s_0 = s, a_0 = a \right] \\
+&= \E [r_0 | s_0 = s, a_0 = a] + \sum_{i=1}^{\infty}\gamma^{i} \E [r_i|s_0 = s, a_0 = a] \\
+&\stackrel{(b)}{=} R(s,a) + \sum_{i=1}^{\infty}\gamma^{i} \left( \sum_{s' \in S}P(s_1 = s' | s_0 = s, a_0 = a) \E [r_i|s_0 = s, a_0 = a, s_1 = s'] \right) \\
+&\stackrel{(c)}{=} R(s,a) + \gamma \sum_{s' \in S}P(s'|s,a) \left( \sum_{i=1}^{\infty}\gamma^{i-1} \E [r_i|s_1 = s'] \right)\\
+&\stackrel{(d)}{=} R(s,a) + \gamma \sum_{s' \in S}P(s'|s,a)V^{\pi}(s') \;\;,
+\end{split}
+\label{eq:sa_valuefunc_mdp_identity}
+\end{equation}
+for all $s \in S$, $a \in A$, where (a) follows from \eqref{eq:sa_valuefunc_mdp} and \eqref{eq:sa_valuefunc_mdp_infinite}, (b) is due to the law of total expectation, (c) follows from the Markov property, and (d) follows from Exercise \ref{ex-infinite-horizon-value-mdp} and linearity of expectation.
+
+\begin{exercise}
+Consider a policy $\bm{\pi}$, not necessarily stationary. (a) Prove that in this case the analog of equation \eqref{eq:sa_valuefunc_mdp_identity} is given by $Q^{\bm{\pi}}_t(s,a) = R(s,a) + \gamma \sum_{s' \in S}P(s'|s,a)V^{\bm{\pi}}_{t+1}(s')$, for all $s \in S$, $a \in A$ and for all $t = 0,1,\dots$.
+\label{ex-sa_valuefunc_mdp_identity_nonstationary}
+\end{exercise}
+
+An interesting aspect of specifying a stationary policy $\pi$ on a MDP is that evaluating the value function for the policy is equivalent to evaluating the value function on an equivalent Markov reward process. Specifically we define the Markov reward process $M'(S,\mathbf{P}^{\pi},R^{\pi},\gamma)$, where $\mathbf{P}^{\pi}$ and $R^{\pi}$ are given by:
+\begin{equation}
+\begin{split}
+R^{\pi}(s) &= \sum_{a \in A} \pi(a|s) R(s,a) \;, \\
+P^{\pi}(s'|s) &= \sum_{a \in A} \pi(a|s) P(s'|s,a) \;.
+\end{split}
+\label{eq:mrp_equiv}
+\end{equation}
+
+\begin{exercise}
+Consider a stationary policy $\pi$ for a MDP. (a) Prove that the value function of the policy $V^{\pi}$ satisfies the identity $V^{\pi}(s) = R^{\pi}(s) + \gamma \sum_{s' \in S} P^{\pi}(s'|s) V^{\pi}(s')$ for all states $s \in S$, with $R^{\pi}$ and $\mathbf{P}^{\pi}$ defined by \eqref{eq:mrp_equiv}.
+\label{ex-s-valuefunc_mdp_identity_stationary}
+\end{exercise}
+
+The evaluation of the value function corresponding to the policy can then be carried out using the techniques introduced in the context of Markov reward processes. For example, in the infinite horizon case with $\gamma < 1$, the iterative algorithm to calculate the value function corresponding to a stationary policy $\pi$ is given in algorithm \ref{alg:mdp1}. The algorithm takes as input a Markov decision process $M = (S,A,P,R,\gamma)$, a stationary policy $\pi$, and a tolerance $\epsilon$, and computes the value function for all the states.
+
+\begin{algorithm}
+\caption{Iterative algorithm to calculate MDP value function for a stationary policy $\pi$}\label{alg:mdp1}
+\begin{algorithmic}[1]
+\Procedure{Policy Evaluation}{$M,\pi,\epsilon$}
+\State For all states $s \in S$, define $R^{\pi}(s) = \sum_{a \in A} \pi(a|s) R(s,a)$
+\State For all states $s,s' \in S$, define $P^{\pi}(s'|s) = \sum_{a \in A} \pi(a|s) P(s'|s,a)$
+\State For all states $s \in S$, $V'(s)\gets 0$, $V(s) \gets \infty$
+\While{$||V - V'||_{\infty} > \epsilon$}
+\State $V \gets V'$
+\State For all states $s \in S$, $V'(s) = R^{\pi}(s) + \gamma \sum_{s' \in S} P^{\pi}(s'|s)V(s')$
+\EndWhile\label{mdp1label}
+\State \textbf{return} $V'(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\begin{exercise}
+(a) Prove that when $\gamma < 1$, algorithm \ref{alg:mdp1} always converges. \textit{Hint: Use Theorem \ref{th-mrp3-termination}.} (b) Consider a positive sequence of real numbers $\{\epsilon_i\}_{i \geq 1}$ such that $\epsilon_i \rightarrow 0$. Suppose algorithm \ref{alg:mdp1} is run to termination for each $\epsilon_i$, and denote each corresponding output of the algorithm as $V^{\pi}_{i}$. Prove that the sequence $V^{\pi}_{i} \rightarrow V^{\pi}$, where $V^{\pi}$ is the value of the policy.
+\label{ex-mdp-valuefunc-alg-iterative-proof}
+\end{exercise}
+
+\subsubsection{Example of a Markov decision process : Mars Rover}
+\label{MDP-example-subsubsection}
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.75]{mars_rover_mdp.png}
+    \caption{Mars Rover Markov decision process.}
+    \label{fig:MDP}
+\end{figure}
+As an example of a MDP, consider the example given in Figure \ref{fig:MDP}. The agent is again a Mars rover whose state space is given by $S = \{S1,\; S2,\; S3,\; S4,\; S5,\; S6,\; S7\}$. The agent has two actions in each state called \textit{``try left''} and \textit{``try right''}, and so the action space is given by $A = \{TL, TR\}$. Taking an action always succeeds, unless we hit an edge in which case we stay in the same state. This leads to the two transition probability matrices for each of the two actions as shown in Figure \ref{fig:MDP}. The rewards from each state are the same for all actions, and is $0$ in the states $\{S2,\;S3,\;S4,\;S5,\;S6\}$, while for the states $S1,\;S7$ the rewards are $1,\;10$ respectively. The discount factor for this MDP is some $\gamma \in [0,1]$.
+
+\begin{exercise}
+Consider the MDP discussed above in Figure \ref{fig:MDP}. Let $\gamma = 0$, and consider a stationary policy $\pi$ which always involves taking the action $TL$ from any state. (a) Calculate the value function of the policy for all states if the horizon is finite. (b) Calculate the value function of the policy when the horizon is infinite. \textit{Hint: Use Theorem \ref{th-gamma-zero}.}
+\label{ex-MDP-example}
+\end{exercise}
+
+\subsection{Bellman backup operators}
+In this section, we introduce the concept of the Bellman backup operators and prove some of their properties which will turn out to be extremely useful in the next section when we discuss MDP control. We have already encountered one Bellman backup operator in \eqref{eq:mrp3-term-proof-eq1}, \eqref{eq:mrp3-term-proof-eq2} in the proof of Theorem \ref{th-mrp3-termination}. We will now define two other closely related (but not same!) Bellman backup operators : \textit{the Bellman expectation backup operator} and \textit{the Bellman optimality backup operator}.
+
+\subsubsection{Bellman expectation backup operator}
+Suppose we are given a MDP $M=(S,A,P,R,\gamma)$, and a stationary policy $\pi$ which can be deterministic or stochastic. We have already seen in section \ref{MDP-MRP-equiv-subsubsection} that this is equivalent to a MRP $M'=(S,P^{\pi},R^{\pi},\gamma)$, where $P^{\pi}$ and $R^{\pi}$ are defined in \eqref{eq:mrp_equiv}. The value function of policy $\pi$ evaluated on $M$, and denoted by $V^{\pi}$, is the same as the value function evaluated on $M'$, where we have used the corresponding definitions of the value function for a MDP and MRP respectively. Note that $V^{\pi}$ lives in the finite dimensional Banach space $\mathbb{R}^{|S|}$, which we will equip with the infinity norm $||\cdot||_{\infty}$ introduced in Exercise \ref{ex-Pstochastic-norm}.
+
+Then for element $U \in \mathbb{R}^{|S|}$ the Bellman expectation backup operator $B^{\pi}$ for the policy $\pi$ is defined as
+\begin{equation}
+(B^{\pi}U)(s) = R^{\pi}(s) + \gamma \sum_{s' \in S} P^{\pi}(s'|s)U(s') \;\;, \;\; \forall \; s \in S \;.
+\label{eq:bellman-expec-backup}
+\end{equation}
+
+We should note that we have already seen this operator appear once before in algorithm \ref{alg:mdp1}. We now prove some properties of this operator.
+
+\begin{theorem}
+The operator $B^{\pi}$ defined in \eqref{eq:bellman-expec-backup} is a contraction map. If $\gamma < 1$ then it is a strict contraction and has a unique fixed point.
+\label{th-bellman-expec-backup-contraction}
+\end{theorem}
+
+\begin{proof}
+Consider $U_1, U_2 \in \mathbb{R}^{|S|}$. Then for a state $s \in S$, we have from \eqref{eq:bellman-expec-backup} and triangle inequality
+\begin{equation}
+\begin{split}
+|(B^{\pi}U_1)(s) - (B^{\pi}U_2)(s)| & = \gamma \left \lvert \sum_{s' \in S} P^{\pi}(s'|s) (U_1(s') - U_2(s')) \right \rvert \leq \gamma \sum_{s' \in S} P^{\pi}(s'|s) |U_1(s') - U_2(s')| \\
+& \leq \gamma \sum_{s' \in S} P^{\pi}(s'|s) \; \underset{s'' \in S}{\max} \; |U_1(s'') - U_2(s'')| = \gamma \sum_{s' \in S} P^{\pi}(s'|s) \; ||U_1 - U_2||_{\infty} \\
+&= \gamma \; ||U_1 - U_2||_{\infty} \;\;.
+\end{split}
+\label{eq:bellman-expec-backup-proof-eq1}
+\end{equation}
+
+As \eqref{eq:bellman-expec-backup-proof-eq1} is true for every $s \in S$ we conclude that $||B^{\pi}U_1 - B^{\pi}U_2||_{\infty} \leq \gamma \; ||U_1 - U_2||_{\infty}$, and hence $B^{\pi}$ is a contraction map as $\gamma \in [0,1]$.
+
+Considering $\gamma < 1$ in \eqref{eq:bellman-expec-backup-proof-eq1}, we conclude that in this case $B^{\pi}$ is a strict contraction, and hence by applying Theorem \ref{th-contraction-mapping} it has a unique fixed point.
+\end{proof}
+
+\begin{corollary}
+Let $\gamma < 1$. Then for any $U \in \mathbb{R}^{|S|}$ the sequence $\{(B^{\pi})^{k}U\}_{k \geq 0}$ is a Cauchy sequence and converges to the fixed point of $B^{\pi}$.
+\label{cor-bellman-expec-backup-repeated}
+\end{corollary}
+
+\begin{proof}
+The proof follows directly by applying Theorem \ref{th-bellman-expec-backup-contraction}, followed by Theorem \ref{th-power-series} and the contraction mapping theorem (Theorem\ref{th-contraction-mapping}).
+\end{proof}
+
+This also implies that for a stationary policy $\pi$, the value function of the policy $V^{\pi}$ is a fixed point of $B^{\pi}$, as shown by the following corollary.
+
+\begin{corollary}
+Let $\pi$ be a policy for an infinite horizon MDP with $\gamma < 1$. Then the value function of the policy $V^{\pi}$ is a fixed point of $B^{\pi}$.
+\label{cor-stationary-policy-value-fixed-point}
+\end{corollary}
+
+\begin{proof}
+The fact that $(B^{\pi}V^{\pi})(s) = V^{\pi}(s)$ for all states $s \in S$, follows from the definition \eqref{eq:bellman-expec-backup} of $B^{\pi}$ and Exercise \ref{ex-s-valuefunc_mdp_identity_stationary}.
+\end{proof}
+
+The next theorem proves the \textit{``monotonicity''} property of the Bellman expectation backup operator.
+
+\begin{theorem}
+Suppose we have $U_1, U_2 \in \mathbb{R}^{|S|}$ such that for all $s \in S,\; U_1(s) \geq U_2(s)$. Then for every stationary policy $\pi$, we have $(B^{\pi}U_1)(s) \geq (B^{\pi}U_2)(s)$ for all $s \in S$. If instead the inequality is strict, i.e. $U_1(s) > U_2(s)$ for all $s \in S$, then we have $(B^{\pi}U_1)(s) > (B^{\pi}U_2)(s)$ for all $s \in S$.
+\label{th-bellman-expec-backup-monoton}
+\end{theorem}
+
+\begin{proof}
+When $U_1(s) \geq U_2(s)$ for all $s \in S$, using definition \eqref{eq:bellman-expec-backup} of $B^{\pi}$ we obtain,
+\begin{equation}
+(B^{\pi}U_1)(s) - (B^{\pi}U_2)(s) = \sum_{s' \in S} P^{\pi}(s'|s) (U_1(s') - U_2(s')) \geq 0 \;\;,
+\label{eq:bellman-expec-backup-monoton-proof-eq1}
+\end{equation}
+ans when $U_1(s) > U_2(s)$ for all $s \in S$, the same steps give $(B^{\pi}U_1)(s) - (B^{\pi}U_2)(s) > 0$, for all states $s \in S$.
+\end{proof}
+
+\subsubsection{Bellman optimality backup operator}
+Suppose we are now given a MDP $M=(S,A,P,R,\gamma)$. We again consider the finite dimensional Banach space $\mathbb{R}^{|S|}$ equipped with the infinity norm $||\cdot||_{\infty}$. Then for every element $U \in \mathbb{R}^{|S|}$ the Bellman optimality backup operator $B^{\ast}$ is defined as
+\begin{equation}
+(B^{\ast}U)(s) = \underset{a \in A}{\max} \; \left[ R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a)U(s') \right] \;\;, \;\; \forall \; s \in S \;.
+\label{eq:bellman-opt-backup}
+\end{equation}
+
+We next prove analogous properties for this operator which are similar to the ones for the Bellman expectation backup operator.
+
+\begin{theorem}
+For every $U_1, U_2 \in \mathbb{R}^{|S|}$, and for all states $s \in S$ the following inequalities are true:\\
+\\
+(a)
+\begin{equation}
+\begin{split}
+(B^{\ast}U_1)(s) - (B^{\ast}U_2)(s) & \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; (U_1(s') - U_2(s')) \right] \\
+& \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; |U_1(s') - U_2(s')| \right] \;\; ,
+\end{split}
+\label{eq:bellman-opt-backup-maxinequality1}
+\end{equation}
+
+(b)
+\begin{equation}
+|(B^{\ast}U_1)(s) - (B^{\ast}U_2)(s)| \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; |U_1(s') - U_2(s')| \right] \leq \gamma \; ||U_1 - U_2||_{\infty} \;\; .
+\label{eq:bellman-opt-backup-maxinequality2}
+\end{equation}
+\label{th-bellman-opt-backup-maxinequality}
+\end{theorem}
+
+\begin{proof}
+We first prove part \textit{(a)}. Fix a state $s \in S$. Using \eqref{eq:bellman-opt-backup} and as the action space $A$ is finite, we conclude that there exists $a_1,a_2 \in A$, not necessarily different, such that the following holds:
+\begin{equation}
+\begin{split}
+(B^{\ast}U_1)(s) &= R(s,a_1) + \gamma \sum_{s' \in S} P(s'|s,a_1)U_1(s') \;,\\
+(B^{\ast}U_2)(s) &= R(s,a_2) + \gamma \sum_{s' \in S} P(s'|s,a_2)U_2(s') \;.
+\end{split}
+\label{eq:bellman-opt-backup-maxinequality-proof-eq1}
+\end{equation}
+
+Then by the definition of maximum in \eqref{eq:bellman-opt-backup}, we also have for the action $a_1$ that
+\begin{equation}
+(B^{\ast}U_2)(s) \geq R(s,a_1) + \gamma \sum_{s' \in S} P(s'|s,a_1)U_2(s') \;.
+\label{eq:bellman-opt-backup-maxinequality-proof-eq2}
+\end{equation}
+
+Thus from \eqref{eq:bellman-opt-backup-maxinequality-proof-eq1} and \eqref{eq:bellman-opt-backup-maxinequality-proof-eq2} we deduce the following
+\begin{equation}
+\begin{split}
+(B^{\ast}U_1)(s) - (B^{\ast}U_2)(s) & \leq \gamma \sum_{s' \in S} P(s'|s,a_1) \; (U_1(s') - U_2(s')) \\
+& \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; (U_1(s') - U_2(s')) \right] \;\;,
+\end{split}
+\label{eq:bellman-opt-backup-maxinequality-proof-eq3}
+\end{equation}
+which proves the first inequality of \textit{(a)}. For the second inequality notice that we have for all states $s' \in S$, $U_1(s') - U_2(s') \leq |U_1(s') - U_2(s')|$, and so multiplying each of these inequalities by positive numbers $P(s'|s,a)$ for some $a \in A$, and summing over all $s'$ gives
+\begin{equation}
+\sum_{s' \in S} P(s'|s,a) \; (U_1(s') - U_2(s')) \leq \sum_{s' \in S} P(s'|s,a) \; |(U_1(s') - U_2(s'))| \;\;.
+\label{eq:bellman-opt-backup-maxinequality-proof-eq4}
+\end{equation}
+
+The result is proved by taking the max over all $a \in A$, by using monotonicity of the max function.
+
+To prove part \textit{(b)}, notice that by interchanging the roles of $U_1, U_2$, we have from part \textit{(a)}
+\begin{equation}
+(B^{\ast}U_2)(s) - (B^{\ast}U_1)(s) \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; |U_1(s') - U_2(s')| \right] \;\; ,
+\label{eq:bellman-opt-backup-maxinequality-proof-eq5}
+\end{equation}
+and thus combining \eqref{eq:bellman-opt-backup-maxinequality-proof-eq5} and \eqref{eq:bellman-opt-backup-maxinequality1} we obtain
+\begin{equation}
+\begin{split}
+|(B^{\ast}U_1)(s) - (B^{\ast}U_2)(s)| & \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; |U_1(s') - U_2(s')| \right] \\
+& \leq \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; \underset{s'' \in S}{\max} \; |U_1(s'') - U_2(s'')| \right] \\
+&= \gamma \; \underset{a \in A}{\max} \left[ \sum_{s' \in S} P(s'|s,a) \; ||U_1 - U_2||_{\infty} \right] \\
+&= \gamma \; \underset{a \in A}{\max} \; ||U_1 - U_2||_{\infty} = \gamma \; ||U_1 - U_2||_{\infty} \;\; ,
+\end{split}
+\label{eq:bellman-opt-backup-maxinequality-proof-eq6}
+\end{equation}
+which proves \textit{(b)}.
+\end{proof}
+
+\begin{theorem}
+The operator $B^{\ast}$ defined in \eqref{eq:bellman-opt-backup} is a contraction map. If $\gamma < 1$ then it is a strict contraction and has a unique fixed point.
+\label{th-bellman-opt-backup-contraction}
+\end{theorem}
+
+\begin{proof}
+The fact that $B^{\ast}$ is a contraction follows from Theorem \ref{th-bellman-opt-backup-maxinequality} by observing that \eqref{eq:bellman-opt-backup-maxinequality1} is true for all $s \in S$, and so must be true in particular for $\underset{s \in S}{\arg\max} \; |(B^{\ast}U_1)(s) - (B^{\ast}U_2)(s)|$, for every $U_1, U_2 \in \mathbb{R}^{|S|}$. Thus $||B^{\ast}U_1 - B^{\ast}U_2||_{\infty} \leq \gamma \; ||U_1 - U_2||_{\infty}$, proving that $B^{\ast}$ is a contraction map as $\gamma \in [0,1]$. Setting $\gamma < 1$ in this inequality proves that $B^{\ast}$ is a strict contraction for $\gamma \in [0,1)$ and thus has a unique fixed point by Theorem \ref{th-contraction-mapping}.
+\end{proof}
+
+\begin{corollary}
+Let $\gamma < 1$. Then for any $U \in \mathbb{R}^{|S|}$ the sequence $\{(B^{\ast})^{k}U\}_{k \geq 0}$ is a Cauchy sequence and converges to the fixed point of $B^{\ast}$.
+\label{cor-bellman-opt-backup-repeated}
+\end{corollary}
+
+\begin{proof}
+The proof follows directly by applying Theorem \ref{th-bellman-opt-backup-contraction}, followed by Theorem \ref{th-power-series} and the contraction mapping theorem (Theorem\ref{th-contraction-mapping}).
+\end{proof}
+
+The next theorem compares the result of the application of $B^{\pi}$ versus $B^{\ast}$ to some $U \in \mathbb{R}^{|S|}$.
+
+\begin{theorem}
+For every stationary policy $\pi$, for every $U \in \mathbb{R}^{|S|}$ and for all $s \in S$, $(B^{\ast}U)(s) \geq (B^{\pi}U)(s)$.
+\label{th-bellman-operator-comparison}
+\end{theorem}
+
+\begin{proof}
+Fix a stationary policy $\pi$, and let $B^{\pi}$ be the corresponding Bellman expectation backup operator. Fix some $U \in \mathbb{R}^{|S|}$. Let us also fix some $s \in S$. Then from definition \eqref{eq:bellman-opt-backup} of $B^{\ast}$ we have
+\begin{equation}
+(B^{\ast}U)(s) = \underset{a \in A}{\max} \; \left[ R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a)U(s') \right] \geq R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a)U(s') \;\; , \; \forall \; a \in A \;.
+\label{eq:bellman-comparison-proof-eq1}
+\end{equation}
+
+Multiplying \eqref{eq:bellman-comparison-proof-eq1} by $\pi(a|s)$ and summing over all $a \in A$ gives
+\begin{equation}
+\begin{split}
+(B^{\ast}U)(s) &= \sum_{a \in A} \pi(a|s) (B^{\ast}U)(s) \geq \sum_{a \in A} \pi(a|s) \left[ R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a)U(s') \right] \\
+&= \sum_{a \in A} \pi(a|s)R(s,a) + \gamma \sum_{s' \in S} \left( \sum_{a \in A} \pi(a|s)P(s'|s,a) \right) U(s') \\
+&= R^{\pi}(s) + \gamma \sum_{s' \in S} P^{\pi}(s'|s)U(s') = (B^{\pi}U)(s) \;\;,
+\end{split}
+\label{eq:bellman-comparison-proof-eq2}
+\end{equation}
+where the last equality follows from definitions \eqref{eq:mrp_equiv} and \eqref{eq:bellman-expec-backup} of $R^{\pi}$, $P^{\pi}$ and $B^{\pi}$, thus proving the theorem.
+\end{proof}
+
+\subsection{MDP control in the infinite horizon setting}
+We now have all the background necessary to discuss the problem of \textit{``MDP control''}, where we seek to find the best policy (often a policy), that achieves the greatest value function among the set of all possible policies. In the context of reinforcement learning, this is precisely the objective of the agent. We are going to first discuss the infinite horizon case in this section, and the finite horizon case will be mentioned in the next section. We do it this way because the infinite horizon case is a much harder problem, that presents quite a few mathematical challenges which will need to be resolved.
+
+To get started, we need to address the question \textit{``what do we exactly mean by finding an optimal policy ?''}.  Precisely we want to know whether a policy always exists, which we will denote by $\bm{\pi}^{\ast}$, whose value function is at least as good as the value function of any other policy. In other words, we need to ensure that the supremum of the value function is actually attained for some policy ! To appreciate the subtlety of this point, consider the example of maximizing the function $f : \mathbb{R} \rightarrow \mathbb{R}$ on $(0,1)$ defined as $f(x) = x$, and note that this problem does not have a solution. But $\sup f(x) = 1$, although $\nexists \; x \in (0,1)$ for which this is attained. 
+
+We first define precisely what it means for a policy, not necessarily stationary, to be an \textbf{optimal policy}.
+\begin{definition}
+A policy $\bm{\pi}^{\ast}$ is an \textit{optimal policy} iff for every policy $\bm{\pi}$, for all $t = 0,1,\dots$, and for all states $s \in S$, $V^{\bm{\pi}^{\ast}}_t(s) \geq V^{\bm{\pi}}_t(s)$. 
+\label{eq:opt-policy-def}
+\end{definition}
+
+The next result that we leave for the reader to prove states that for an infinite horizon MDP, existence of an optimal policy also implies the existence of a stationary optimal policy. This result is intuitively obvious, and is a very important result as it significantly reduces the universe of policies to consider when searching for an optimal policy, if it exists. In particular, it states that we need only consider policies that are stationary.
+\begin{exercise}
+(a) Consider an infinite horizon MDP. Let $\bm{\pi}^{\ast}$ be an optimal policy for the MDP. Prove that there exists a stationary policy $\pi$, that is $\bm{\pi} = (\pi,\pi,\dots)$, which is also optimal.
+\label{ex-MDP-stationary-policy-opt}
+\end{exercise}
+
+The next two theorems improve on the conclusion of Exercise \ref{ex-MDP-stationary-policy-opt} and show us that we may restrict the search to a finite set of deterministic stationary policies.
+
+\begin{theorem}
+The number of deterministic stationary policies is finite, and equals $|A|^{|S|}$.
+\label{th-finite-policies-deterministic}
+\end{theorem}
+
+\begin{proof}
+Since the policies are stationary and deterministic, each policy can be represented as a function $\pi : S \rightarrow A$. The number of such distinct functions is given by $|A|^{|S|}$. This also proves that the set of deterministic stationary policies is finite.
+\end{proof}
+
+\begin{theorem}
+If $\pi$ is a stationary policy for an infinite horizon MDP with $\gamma < 1$, then there exists a deterministic stationary policy $\hat{\pi}$ such that $V^{\hat{\pi}}(s) \geq V^{\pi}(s)$ for all states $s \in S$. One such policy is given by the stationary policy
+\begin{equation}
+\hat{\pi}(s) = \underset{a \in A}{\arg\max} \; \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V^{\pi}(s') \right] \;\;,\; \forall \; s \in S \;,
+\label{eq:deterministic-policy-better-theorem-eq1}
+\end{equation}
+which satisfies the equality $(B^{\hat{\pi}}V^{\pi})(s) = (B^{\ast}V^{\pi})(s) \geq V^{\pi}(s)$ for all $s$. Moreover $V^{\hat{\pi}}(s) = V^{\pi}(s)$ for all $s$, iff $(B^{\ast}V^{\pi})(s) = V^{\pi}(s)$ for all $s$.
+\label{th-deterministic-policy-better}
+\end{theorem}
+
+\begin{proof}
+We first notice that the policy $\hat{\pi}$ defined in \eqref{eq:deterministic-policy-better-theorem-eq1} is a stationary policy (by definition), and is also deterministic for every $s \in S$, by the definition of $\arg\max$ with ties broken randomly.
+
+As $\hat{\pi}$ is deterministic, we can conclude using \eqref{eq:mrp_equiv} that $R^{\hat{\pi}}(s) = R(s,\hat{\pi}(s))$ and $P^{\hat{\pi}}(s'|s)=P(s'|s,\hat{\pi}(s))$ for all $s \in S$ and $a \in A$, and thus we have
+\begin{equation}
+(B^{\hat{\pi}}V^{\pi})(s) = R(s,\hat{\pi}(s)) + \gamma \; \sum_{s' \in S} P(s'|s,\hat{\pi}(s)) V^{\pi}(s) = (B^{\ast}V^{\pi})(s) \;\;,
+\label{eq:deterministic-policy-better-proof-eq1}
+\end{equation}
+for all states $s \in S$ using \eqref{eq:deterministic-policy-better-theorem-eq1}, and the definitions of the Bellman backup operators in \eqref{eq:bellman-expec-backup} and \eqref{eq:bellman-opt-backup}. Next, by Corollary \ref{cor-stationary-policy-value-fixed-point} we have $B^{\pi}V^{\pi} = V^{\pi}$, and by Theorem \ref{th-bellman-operator-comparison} we have $B^{\ast}V^{\pi} \geq B^{\pi}V^{\pi}$, and so combining these with \eqref{eq:deterministic-policy-better-proof-eq1} we obtain
+\begin{equation}
+(B^{\hat{\pi}}V^{\pi})(s) = (B^{\ast}V^{\pi})(s) \geq V^{\pi}(s) \;\;,\; \forall \; s \in S \;.
+\label{eq:deterministic-policy-better-proof-eq2}
+\end{equation}
+
+Next using Theorem \ref{th-bellman-expec-backup-monoton}, the monotonicity property of $B^{\hat{\pi}}$ allows us to conclude by repeatedly applying $B^{\hat{\pi}}$ to both sides of \eqref{eq:deterministic-policy-better-proof-eq2} that $((B^{\hat{\pi}})^{k}V^{\pi})(s) \geq V^{\pi}(s)$ for all $k \geq 1$, and for all states $s \in S$. Then using Corollary \ref{cor-bellman-expec-backup-repeated}, and noticing that $V^{\hat{\pi}}$ is the unique fixed point of $B^{\hat{\pi}}$ we obtain by taking limits
+\begin{equation}
+V^{\hat{\pi}}(s) = (B^{\hat{\pi}}V^{\hat{\pi}})(s) = \lim_{k \rightarrow \infty} ((B^{\hat{\pi}})^{k}V^{\pi})(s) \geq V^{\pi}(s) \;\;,\; \forall \; s \in S \;.
+\label{eq:deterministic-policy-better-proof-eq3}
+\end{equation}
+
+To prove the second part of the theorem, first assume that $B^{\ast}V^{\pi} = V^{\pi}$. Then by \eqref{eq:deterministic-policy-better-proof-eq2} we have $B^{\hat{\pi}}V^{\pi} = B^{\ast}V^{\pi} = V^{\pi}$, and so by uniqueness of the fixed point of $B^{\hat{\pi}}$ we get $V^{\hat{\pi}} = B^{\hat{\pi}}V^{\hat{\pi}} = V^{\pi}$. Next assume that $V^{\hat{\pi}} = V^{\pi}$. Then again by \eqref{eq:deterministic-policy-better-proof-eq2} we have $V^{\pi} = V^{\hat{\pi}} = B^{\hat{\pi}}V^{\hat{\pi}} = B^{\hat{\pi}}V^{\pi} = B^{\ast}V^{\pi} \geq V^{\pi}$, implying that $B^{\ast}V^{\pi} = V^{\pi}$, thus completing the proof.
+\end{proof}
+
+\begin{corollary}
+In the notation of Theorem \ref{th-deterministic-policy-better}, if $\exists \; s \in S$ such that $(B^{\ast}V^{\pi})(s) > V^{\pi}(s)$, then $V^{\hat{\pi}}(s) > V^{\pi}(s)$. In this case, we say that $\hat{\pi}$ is \textit{``strictly better''} than $\pi$ as a policy.
+\label{cor-strictly-better-policy}
+\end{corollary}
+
+\begin{proof}
+The proof follows immediately by noting that the inequality in \eqref{eq:deterministic-policy-better-proof-eq2} becomes a strict inequality, and then applying Theorem \ref{th-bellman-expec-backup-monoton}.
+\end{proof}
+
+The consequences of Theorems \ref{th-finite-policies-deterministic} and \ref{th-deterministic-policy-better} is spectacular, because now the search for an optimal policy has been reduced to the set of only the deterministic stationary policies which is a finite set, if such a policy exists. The reader is to prove that this is actually the case in the following exercise.
+
+\begin{exercise}
+Consider an infinite horizon MDP with $\gamma < 1$. Denote $\Pi$ to be the set of all deterministic stationary policies. (a) Prove that $\exists \; \pi^{\ast} \in \Pi$, such that for all $\pi \in \Pi$, and for all states $s \in S$, $V^{\pi^{\ast}}(s) \geq V^{\pi}(s)$. (b) Conclude that $\bm{\pi^{\ast}} = (\pi^{\ast}, \pi^{\ast}, \dots)$ is an optimal policy. \textit{Hint : See Theorem \ref{th-fixed-point-bellman-opt-backup}}.
+\label{ex-opt-policy-existence}
+\end{exercise}
+
+We have thus established the existence of an optimal policy and moreover concluded that a deterministic stationary policy suffices. This then allows us to make the following definition:
+
+\begin{definition}
+The \textit{optimal value function} for an infinite horizon MDP is defined as
+\begin{equation}
+V^{\ast}(s) = \underset{\pi \in \Pi}{\max} \; V^{\pi}(s) \;,
+\label{eq:opt-valfunc-mdp-infinite}
+\end{equation}
+and there exists a stationary deterministic policy $\pi^{\ast} \in \Pi$, which is an optimal policy, such that $V^{\ast}(s) = V^{\pi^{\ast}}(s)$ for all states $s \in S$, where $\Pi$ is the set of all stationary deterministic policies.
+\label{def-opt-valfunc-mdp-infinite}
+\end{definition}
+
+We next look at a few algorithms to compute the optimal value function and an optimal policy.
+
+\subsubsection{Policy search}
+Definition \ref{def-opt-valfunc-mdp-infinite} immediately renders itself to a brute force algorithm called \textbf{policy search} to find the optimal value function $V^{\ast}$ and an optimal policy $\pi^{\ast}$, as described in pseudo-code in algorithm \ref{alg:mdp2}. The algorithm takes as input an infinite horizon MDP $M = (S,A,P,R,\gamma)$ and a tolerance $\epsilon$ for accuracy of policy evaluation, and returns the optimal value function and an optimal policy.
+
+\begin{algorithm}
+\caption{Policy search algorithm to calculate optimal value function and find an optimal policy}\label{alg:mdp2}
+\begin{algorithmic}[1]
+\Procedure{Policy Search}{$M,\epsilon$}
+\State $\Pi \gets $ All stationary deterministic policies of M
+\State $\pi^{\ast} \gets $ Randomly choose a policy $\pi \in \Pi$
+\State $V^{\ast} \gets$ \small POLICY EVALUATION \normalsize ($M,\pi^{\ast},\epsilon$)
+\For{$\pi \in \Pi$}
+\State $V^{\pi} \gets$ \small POLICY EVALUATION \normalsize ($M,\pi,\epsilon$)
+\If{$V^{\pi}(s) \geq V^{\ast}(s)$ for all $s \in S$,}
+\State $V^{\ast} \gets V^{\pi}$
+\State $\pi^{\ast} \gets \pi$
+\EndIf
+\EndFor\label{mdp2label}
+\State \textbf{return} $V^{\ast}(s), \; \pi^{\ast}(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+It is clear that algorithm \ref{alg:mdp2} always terminates as it checks all $|A|^{|S|}$ deterministic stationary policies. Thus the run-time complexity of this algorithm is $O(|A|^{|S|})$. It is possible to prove correctness of the algorithm when $\epsilon = 0$, i.e. when in each iteration the policy evaluation is done exactly. In practice $\epsilon$ is set to a small number such as $10^{-9}$ to $10^{-12}$.
+
+\begin{theorem}
+Algorithm \ref{alg:mdp2} returns the optimal value function and an optimal policy when $\epsilon = 0$.
+\label{th-policy-iter-correctness}
+\end{theorem}
+
+\begin{proof}
+Let $\pi^{\ast}$ be an optimal policy, and thus $V^{\pi^{\ast}}(s) = V^{\ast}(s)$ for all states $s \in S$. Since the algorithm checks every policy in $\Pi$, it means that $\pi^{\ast}$ must get selected at some iteration of the algorithm. Thus for the policies considered in future iterations the value function can no longer strictly increase.  Future iterations may select a different policy with the same optimal value function, thus completing the proof.
+\end{proof}
+
+\begin{exercise}
+Consider the MDP discussed in section \ref{MDP-example-subsubsection}, shown in Figure \ref{fig:MDP}. Consider the horizon to be infinite. (a) How many deterministic stationary policies does the agent have ? (b) If $\gamma < 1$, is the optimal policy unique ? (c) If $\gamma = 1$, is the optimal policy unique ?
+\label{ex-number-policies}
+\end{exercise}
+
+\subsubsection{Policy iteration}
+We now discuss a more efficient algorithm than policy search called \textbf{policy iteration}. The algorithm is a straightforward application of Theorem \ref{th-deterministic-policy-better}, which states that given any stationary policy $\pi$, we can find a deterministic stationary policy that is no worse than the existing policy. In particular the theorem also applies to deterministic policies. This simple step has a special name called \textbf{``policy improvement''}, whose pseudo-code is presented in algorithm \ref{alg:mdp3}.
+
+\begin{algorithm}
+\caption{Policy improvement algorithm to improve an input policy}\label{alg:mdp3}
+\begin{algorithmic}[1]
+\Procedure{Policy Improvement}{$M,V^{\pi}$}
+\State $\hat{\pi}(s) \gets \underset{a \in A}{\arg\max} \; \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V^{\pi}(s') \right] \;\;,\; \forall \; s \in S$
+\label{mdp3label}
+\State \textbf{return} $\hat{\pi}(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The output of algorithm \ref{alg:mdp3} is always guaranteed to be at least as good as the policy $\pi$ corresponding to the input value function $V^{\pi}$, and represents a \textit{``greedy''} attempt to improve the policy. When performed iteratively with the policy evaluation algorithm (algorithm \ref{alg:mdp1}), this gives rise to the policy iteration algorithm. The pseudo-code of policy iteration is outlined in algorithm \ref{alg:mdp4}.
+
+\begin{algorithm}
+\caption{Policy iteration algorithm to calculate optimal value function and find an optimal policy}\label{alg:mdp4}
+\begin{algorithmic}[1]
+\Procedure{Policy Iteration}{$M,\epsilon$}
+\State $\pi \gets $ Randomly choose a policy $\pi \in \Pi$
+\While{true}
+\State $V^{\pi} \gets$ \small POLICY EVALUATION \normalsize ($M,\pi,\epsilon$)
+\State $\pi^{\ast} \gets$ \small POLICY IMPROVEMENT \normalsize ($M,V^{\pi}$)
+\If{$\pi^{\ast}(s) = \pi(s)$}
+\State break
+\Else
+\State $\pi \gets \pi^{\ast}$
+\EndIf
+\EndWhile
+\label{mdp4label}
+\State $V^{\ast} \gets V^{\pi}$
+\State \textbf{return} $V^{\ast}(s), \; \pi^{\ast}(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The proof of correctness of algorithm \ref{alg:mdp4} is left to the reader as the next exercise. Note that the algorithm will always terminate as there are a finite number of stationary deterministic policies by Theorem \ref{th-finite-policies-deterministic}.
+
+\begin{exercise}
+Consider an infinite horizon MDP with $\gamma < 1$. (a) Show that when algorithm \ref{alg:mdp4} is run with $\epsilon=0$, it finds the optimal value function and an optimal policy. \textit{Hint : See Theorem \ref{th-fixed-point-bellman-opt-backup}.} (b) Prove that the termination criteria used in the algorithm makes sense: precisely show that if the policy does not change during a policy improvement step, then the policy cannot improve in future iterations. (c) Show that the value functions corresponding to the policies in each iteration of the algorithm form a non-decreasing sequence for every $s \in S$. (d) What is the worst case run-time complexity of this algorithm ?
+\label{ex-policy-iteration}
+\end{exercise}
+
+\subsubsection{Value iteration}
+We now discuss \textbf{value iteration} which is yet another technique that can be used to compute the optimal value function and an optimal policy, given a MDP. To motivate this method we will need the following theorem:
+
+\begin{theorem}
+For a MDP with $\gamma < 1$, let the fixed point of the Bellman optimality backup operator $B^{\ast}$ be denoted by $V^{\ast} \in \mathbb{R}^{|S|}$. Then the policy given by 
+\begin{equation}
+\pi^{\ast}(s) = \underset{a \in A}{\arg\max} \; \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V^{\ast}(s') \right]  \;\;,\; \forall \; s \in S \;,
+\label{eq:fixed-point-bellman-opt-backup-theorem-eq1}
+\end{equation}
+is a stationary deterministic policy. The value function of this policy $V^{\pi^{\ast}}$ satisfies the identity $V^{\pi^{\ast}} = V^{\ast}$, and thus $V^{\ast}$ is also the fixed point of the operator $B^{\pi^{\ast}}$. In particular this implies that there exists a stationary deterministic policy $\pi^{\ast}$ whose value function is the fixed point of $B^{\ast}$. Moreover, $\pi^{\ast}$ is an optimal policy.
+\label{th-fixed-point-bellman-opt-backup}
+\end{theorem}
+
+\begin{proof}
+We start by noting that $\pi^{\ast}$ as defined in \eqref{eq:fixed-point-bellman-opt-backup-theorem-eq1} is a stationary deterministic policy, and so we can conclude using \eqref{eq:mrp_equiv} that $R^{\pi^{\ast}}(s) = R(s,\pi^{\ast}(s))$ and $P^{\pi^{\ast}}(s'|s)=P(s'|s,\pi^{\ast}(s))$ for all $s \in S$ and $a \in A$.
+
+As $V^{\ast}$ is the fixed point of $B^{\ast}$, we have $B^{\ast}V^{\ast}=V^{\ast}$. So using definition \eqref{eq:bellman-opt-backup} of $B^{\ast}$, and \eqref{eq:fixed-point-bellman-opt-backup-theorem-eq1} we can write
+\begin{equation}
+\begin{split}
+V^{\ast}(s) &= \underset{a \in A}{\max} \; \left[ R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a)V^{\ast}(s') \right] \\
+&= R(s,\pi^{\ast}(s)) + \gamma \sum_{s' \in S} P(s'|s,\pi^{\ast}(s))V^{\ast}(s') \\
+&= R^{\pi^{\ast}}(s) + \gamma \sum_{s' \in S} P^{\pi^{\ast}}(s'|s) V^{\ast}(s') \\
+&= V^{\pi^{\ast}}(s) 
+\end{split}
+\label{eq:fixed-point-bellman-opt-backup-proof-eq1}
+\end{equation}
+for all $s \in S$, completing the proof of the first part of the theorem.
+
+To prove that $\pi^{\ast}$ is an optimal policy, we show that if an optimal policy exists then its value function must be a fixed point of the operator $B^{\ast}$. So assume that an optimal policy exists, which by Theorem \ref{th-deterministic-policy-better} we can take to be a stationary deterministic policy, and let us denote it as $\mu$ and the corresponding optimal value function as $V^{\mu}$. Now for the sake of contradiction, suppose $V^{\mu}$ is not a fixed point of $B^{\ast}$. Then there exists $s \in S$ such that $V^{\mu}(s) \neq (B^{\ast}V^{\mu})(s)$, which upon combining with Theorem \ref{th-deterministic-policy-better} implies that $V^{\mu}(s) > (B^{\ast}V^{\mu})(s)$. Then application of Corollary \ref{cor-strictly-better-policy} implies that there exists a policy $\hat{\pi}$ which is strictly better than $\mu$, and so we have a contradiction. This proves that $V^{\mu}$ must be the unique fixed point of $B^{\ast}$. Combining this fact with the first part implies that $V^{\ast}$ must be the optimal value function and $\pi^{\ast}$ is an optimal policy. This completes the proof.
+\end{proof}
+
+Theorem \ref{th-fixed-point-bellman-opt-backup} suggests a straightforward way to calculate the optimal value function $V^{\ast}$ and an optimal policy $\pi^{\ast}$. The idea is to run fixed point iterations to find the fixed point of $B^{\ast}$ using Corollary \ref{cor-bellman-opt-backup-repeated}. Once we have $V^{\ast}$, an optimal policy $\pi^{\ast}$ can be extracted using \eqref{eq:fixed-point-bellman-opt-backup-theorem-eq1}. The pseudo-code of this algorithm is given in algorithm \ref{alg:mdp5}, which takes as input an infinite horizon MDP $M = (S,A,P,R,\gamma)$ and a tolerance $\epsilon$, and returns the optimal value function and an optimal policy.
+
+\begin{algorithm}
+\caption{Value iteration algorithm to calculate optimal value function and find an optimal policy}\label{alg:mdp5}
+\begin{algorithmic}[1]
+\Procedure{Value Iteration}{$M,\epsilon$}
+\State For all states $s \in S$, $V'(s)\gets 0$, $V(s) \gets \infty$
+\While{$||V - V'||_{\infty} > \epsilon$}
+\State $V \gets V'$
+\State For all states $s \in S$, $V'(s) = \underset{a \in A}{\max} \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V(s') \right]$
+\EndWhile\label{mdp5label}
+\State $V^{\ast} \gets V$ for all $s \in S$
+\State $\pi^{\ast} \gets \underset{a \in A}{\arg\max} \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V^{\ast}(s') \right]  \;\;,\; \forall \; s \in S$
+\State \textbf{return} $V^{\ast}(s), \; \pi^{\ast}(s)$ for all $s \in S$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+If algorithm \ref{alg:mdp5} is run with $\epsilon = 0$, we can recover the optimal value function and an optimal policy exactly. However in practice, $\epsilon$ is set to be a small number such as $10^{-9}$-$10^{-12}$.
+
+\subsection{MDP control for a finite horizon MDP}
+We now briefly discuss the MDP control problem for a finite horizon MDP. Having already discussed the control problem for infinite horizon MDPs, we simply state that in the finite horizon case, a deterministic policy can be obtained that is optimal. But the policy is no longer stationary, and so at each time $t$ the policy is different. The proof is not too difficult and the reader is asked to derive these facts in the following exercise.
+
+\begin{exercise}
+Consider a MDP with finite horizon $H$ and finite rewards. A typical episode of the MDP will look like $(s_0,a_0,s_1,a_1,\dots,s_{H-1},a_{H-1},s_H)$. Let a policy for the MDP be denoted by $\bm{\pi} = (\pi_0,\pi_1,\dots,\pi_{H-1})$. Then prove the following statements:\\
+\\
+(a) Show that the number of deterministic policies for the MDP is given by $H|A|^{|S|}$.\\
+\\
+(b) Assuming that an optimal policy $\bm{\pi^{\ast}}$ exists, derive a recurrence relation for the optimal value function $V^{\bm{\pi^{\ast}}} = (V^{\bm{\pi^{\ast}}}_0,\dots,V^{\bm{\pi^{\ast}}}_H)$, with $V^{\bm{\pi^{\ast}}}_H(s) = 0$ for all states $s \in S$. Precisely, derive a relationship between $V^{\bm{\pi^{\ast}}}_t$ and $V^{\bm{\pi^{\ast}}}_{t+1}$.\\
+\\
+(c) Let $\bm{\Pi}$ be the set of all deterministic policies, i.e. for every $\bm{\pi} \in \bm{\Pi}$, $\pi_t$ is a deterministic policy at time $t$ and for all times $t=0,\dots,H-1$. Show that for every policy, deterministic or stochastic, there exists a $\bm{\pi} \in \bm{\Pi}$ which is no worse.\\
+\\
+(b) Show that $\bm{\Pi}$ contains a policy that is optimal.
+\label{ex-finite-MDP-control}
+\end{exercise}
+
+Because of the conclusion of Exercise \ref{ex-finite-MDP-control}, just like in the infinite horizon case we can restrict our search for an optimal policy to the set of deterministic policies. We present an algorithm, namely \textbf{value iteration} for this purpose, which is analogous to its counterpart in the infinite horizon case.
+
+\begin{algorithm}
+\caption{Value iteration algorithm for finite horizon MDPs}\label{alg:mdp6}
+\begin{algorithmic}[1]
+\Procedure{Finite Value Iteration}{$M$}
+\State For all states $s \in S$, $V^{\ast}_H(s)\gets 0$
+\State $t \gets H-1$
+\While{$t \geq 0$}
+\State For all states $s \in S$, $V^{\ast}_t(s) = \underset{a \in A}{\max} \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V^{\ast}_{t+1}(s') \right]$
+\State For all states $s \in S$, $\pi^{\ast}_t = \underset{a \in A}{\arg\max} \left[ R(s,a) + \gamma \; \sum_{s' \in S} P(s'|s,a) V^{\ast}_{t+1}(s') \right]$
+\State $t \gets t-1$
+\EndWhile\label{mdp6label}
+\State \textbf{return} For all states $s \in S$, $V^{\ast}_t(s)$ for $t=0,\dots,H$, $\; \pi^{\ast}_t(s)$ for $t=0,\dots,H-1$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The proof of correctness of the algorithm is left to the reader as the next exercise.
+\begin{exercise}
+(a) Prove the correctness of algorithm \ref{alg:mdp6}. \textit{Hint : Use results of Exercise \ref{ex-finite-MDP-control} (b).}
+\label{ex-finite-value-iteration-convergence}
+\end{exercise}
+
+The next exercise, which is also not too difficult to prove, establishes a correspondence between value iteration in the finite and infinite horizon cases.
+
+\begin{exercise}
+Consider a MDP $M=(S,A,P,R,\gamma)$ with infinite horizon and $\gamma < 1$. Let $V^{\ast}$ be the optimal value function of $M$. Define a sequence of finite horizon MDPs  $M_k$ with horizon $H_k$, such that $M_k = M$ and $H_k = k$, for all $k=1,2,\dots$. Let $\{(V_k)^{\ast}\}_{k \geq 1}$ be the sequence of optimal value functions returned by algorithm \ref{alg:mdp6} when run with the input $M_k$, and corresponding to $t = 0$. (a) Prove that $(V_k)^{\ast} \rightarrow V^{\ast}$ as $k \rightarrow \infty$.
+\label{ex-value-iteration-finite-infinite-correspondence}
+\end{exercise}
+
+
+\clearpage
+\appendix
+\appendixpage
+\section{Contraction mapping theorem \footnote{Additional material that was not covered in class.} }
+\label{contraction-map}
+In this section, we introduce the notion of contraction maps in a Banach space setting, that we have heavily relied on in the previous section to prove many of our important theorems. The notation used in this section will be completely independent of what was introduced before, and so the reader should read this section in a self-contained fashion.
+
+Let $(V,||\cdot||)$ be a Banach space, where $V$ is a vector space and $||\cdot||$ is the norm defined on the vector space. V may be finite or infinite dimensional. As it is a Banach space, we remind the reader that the space is complete, meaning that all Cauchy sequences (Definition \ref{def-cauchy-seq}) converge (Definition \ref{def-convergence}). We first give a few definitions:
+
+\begin{definition}
+A sequence $\{v_k\}_{k \geq 1}$ of elements $v_k \in V ,\;\forall\; k = 1,2,\dots$, is called a \textit{Cauchy sequence} iff for every real number $\epsilon > 0$ there exists an integer $N \geq 1$, such that $||v_m - v_n|| < \epsilon$ for all $m,n > N$.
+\label{def-cauchy-seq}
+\end{definition}
+
+\begin{definition}
+Let $\{v_k\}_{k \geq 1}$ be a sequence of elements of $V$. We say that the sequence \textit{converges} to an element $v \in V$, iff for every real number $\epsilon > 0$ there exists an integer $N \geq 1$, such that $||v_k - v|| < \epsilon$ for all $k \geq N$. We write this as $v_k \rightarrow v$.
+\label{def-convergence}
+\end{definition}
+
+Our first theorem of this section shows that any sequence that is eventually constant is Cauchy.
+\begin{theorem}
+A sequence $\{v_k\}_{k \geq 1}$ in a normed vector space that is eventually constant is Cauchy.
+\label{th-eventually-const-seq}
+\end{theorem}
+
+\begin{proof}
+As the sequence is eventually constant, there exists a positive integer $r$ and $v \in V$ such that for all $k \geq r$, $v_k = v$. Then for any $\epsilon > 0$, one can choose $N = r$ in Definition \ref{def-cauchy-seq}, giving $0 = ||v_m - v_n|| < \epsilon$ for all $m,n > N$, thus completing the proof.
+\end{proof}
+
+We can now prove that the limit of a Cauchy sequence is unique.
+\begin{theorem}
+A Cauchy sequence $\{v_k\}_{k \geq 1}$ in a Banach space converges to a unique limit.
+\label{th-cauchy-seq-lim}
+\end{theorem}
+
+\begin{proof}
+The fact that the Cauchy sequence converges to a limit is true by the definition of a Banach space. We need to show that this limit is unique. We prove it by contradiction.
+
+Suppose $\exists v,w \in V, \; v \neq w$, such that $v_k \rightarrow v$ and $v_k \rightarrow w$. Let $\delta = ||v-w||$, and note that $\delta > 0$ as $v \neq w$. By Definition \ref{def-convergence}, there exist positive integers $M,N$ such that $||v_m - v|| < \delta/2 \;\;, \forall \; m \geq M$ and $||v_n - w|| < \delta/2 \;\;, \forall \; n \geq N$. Let $l = \max(M,N)$. Then by triangle inequality we have, $||v - w|| \leq ||v - v_l|| + ||v_l - w|| < \delta$, which is a contradiction.
+\end{proof}
+
+We next define the notion of a \textit{``contraction map''} on a Banach space, and the notion of a \textit{``fixed point''} of an operator that maps $V$ to itself.
+\begin{definition}
+A function $T:V \rightarrow V$ is called a \textit{contraction} on $V$ iff for every $v,w \in V$, $||Tv - Tw|| \leq ||v - w||$. The map is called a \textit{strict contraction} iff there exists a real number $0 \leq \gamma < 1$, such that for every $v,w \in V$, $||Tv - Tw|| \leq \gamma ||v - w||$. The constant $\gamma$ is called the \textit{contraction factor} of $T$.
+\label{def-contraction-map}
+\end{definition}
+
+\begin{definition}
+Consider a function $T:V \rightarrow V$. We say that $v \in V$ is a \textit{fixed point} of $T$ in $V$, iff $Tv = v$.
+\label{def-fixed-point}
+\end{definition}
+
+We should note that a map $T:V \rightarrow V$ may have many fixed points or none. For example, the contraction map $T : \mathbb{R} \rightarrow \mathbb{R}$ given by $T(x) = x + 1$ has no fixed points in $\mathbb{R}$. On the other hand the map $T : \mathbb{R} \rightarrow \mathbb{R}$ given by $T(x) = x$, which is also a contraction, has infinitely many fixed points in $\mathbb{R}$. Similarly, any linear map from $V$ to itself has $0$ as a fixed point, but may not be a contraction.
+
+The $\gamma = 0$ case is special, as shown by the following theorem.
+\begin{theorem}
+Suppose $T$ is a strict contraction on a normed vector space $V$ (not necessarily Banach) with contraction factor $\gamma = 0$. Then $T$ is a constant map.
+\label{th-gamma-zero}
+\end{theorem}
+
+\begin{proof}
+Consider an element $v \in V$, and let $c = Tv$. Now for every element $w \in V$, we have $||Tv - Tw|| \leq 0$, which implies $||Tv - Tw|| = 0$. By property of norms this implies that $Tw = Tv = c$.
+\end{proof}
+
+We next prove a theorem involving repeated application of a strict contraction map.
+\begin{theorem}
+Suppose $T$ is a strict contraction on a normed vector space $V$ (not necessarily Banach) with contraction factor $\gamma$. Then for every element $v \in V$, the sequence $\{v,Tv,T^{2}v,\dots\}$ is a Cauchy sequence.
+\label{th-power-series}
+\end{theorem}
+
+\begin{proof}
+If $\gamma = 0$, Theorem \ref{th-gamma-zero} implies that the sequence $\{v,Tv,T^{2}v,\dots\}$ is a constant sequence, except for the first term, and hence Cauchy by Theorem \ref{th-eventually-const-seq}.
+
+So assume that $\gamma \neq 0$. Let $\alpha = ||Tv - v||$. By repeated application of the contraction map we have for all $n \geq 0$,
+\begin{equation}
+||T^{n+1}v - T^{n}v|| \leq \gamma ||T^{n}v - T^{n-1}v|| \leq \dots \leq \gamma^{n}||Tv - v|| = \gamma^{n} \alpha.
+\label{eq:power-series-proof-eq1}
+\end{equation}
+
+Then by the triangle inequality and \eqref{eq:power-series-proof-eq1} we additionally have for all $m,n$ satisfying $0 \leq n \leq m$,
+\begin{equation}
+\begin{split}
+||T^{m}v - T^{n}v|| &= \norm{\sum_{k=n}^{m-1}(T^{k+1}v - T^{k}v)} \leq \sum_{k=n}^{m-1} ||T^{k+1}v - T^{k}v|| \\
+&\leq \sum_{k=n}^{m-1} \gamma^{k} \alpha = \alpha \left( \frac{\gamma^{n} - \gamma^{m}}{1 - \gamma} \right) < \frac{\alpha\gamma^{n}}{1 - \gamma} \;.
+\end{split}
+\label{eq:power-series-proof-eq2}
+\end{equation}
+
+To prove the sequence is Cauchy, we fix an $\epsilon > 0$, and set $N = \max \left(1, \left \lceil \log \left(\frac{\epsilon(1-\gamma)}{\alpha} \right) \bigg / \log \gamma \right \rceil \right)$.
+Then for all $m,n$ satisfying $m\geq n > N$, and as a consequence of \eqref{eq:power-series-proof-eq2}, we have 
+\begin{equation}
+||T^{m}v - T^{n}v|| \leq \frac{\alpha\gamma^{n}}{1 - \gamma} < \frac{\alpha\gamma^{N}}{1 - \gamma} \leq \epsilon \; ,\label{eq:power-series-proof-eq3}
+\end{equation}
+which completes the proof.
+\end{proof}
+
+We can now prove the main result of this section : \textit{``the contraction mapping theorem''}.
+\begin{theorem}
+Suppose the function $T:V \rightarrow V$ is a strict contraction on a Banach space $V$. Then $T$ has a unique fixed point in $V$. Moreover, for every element $v \in V$, the sequence $\{v,Tv,T^{2}v,\dots\}$ is Cauchy and converges to the fixed point.
+\label{th-contraction-mapping}
+\end{theorem}
+
+\begin{proof}
+As $T$ is a strict contraction, let $\gamma \in [0,1)$ be the contraction factor of $T$.
+
+We first prove the uniqueness part by contradiction. Let $v,w \in V$ be fixed points of $T$ and $v \neq w$, so $||v - w|| > 0$. Then we have that $||Tv -Tw|| = ||v - w||$. By the contraction property we also have $||Tv - Tw|| \leq \gamma ||v - w|| < ||v - w||$. But then this implies $||v - w|| < ||v - w||$, a contradiction.
+
+We now prove the existence part. Take any element $v \in V$ and consider the sequence $\{v_k\}_{k \geq 1}$ defined as follows:
+\begin{equation}
+v_k = 
+\begin{cases}
+v \;\; & \text{if} \;\; k = 1,\\
+Tv_{k-1} \;\; & \text{if} \;\; k > 1
+\end{cases}
+\;\;.
+\label{eq:ctc-map-proof-eq1}
+\end{equation}
+Then by Theorem \ref{th-power-series}, $\{v_k\}_{k \geq 1}$ is a Cauchy sequence, and hence as $V$ is a Banach space, the sequence converges to a unique limit $v^{\ast} \in V$ by Theorem \ref{th-cauchy-seq-lim}. We claim that $v^{\ast}$ is a fixed point of $T$. To prove this, choose any $\epsilon > 0$ and define $\delta = \epsilon / (1 + \gamma)$. As $v_k \rightarrow v^{\ast}$, by Definition \ref{def-convergence}, $\exists \; N \geq 1$ such that $||v_k - v^{\ast}|| < \delta \;,\; \forall \; k \geq N$. Then by triangle inequality we have:
+\begin{equation}
+\begin{split}
+||Tv^{\ast} - v^{\ast}|| &\leq ||Tv^{\ast} - v_{N+1}|| + ||v_{N+1} - v^{\ast}|| \\
+&= ||Tv^{\ast} - Tv_{N}|| + ||v_{N+1} - v^{\ast}|| \\
+&\leq \gamma ||v^{\ast} - v_{N}|| + ||v_{N+1} - v^{\ast}|| \\
+&< \gamma \delta + \delta = \epsilon \;.
+\end{split}
+\label{eq:ctc-map-proof-eq2}
+\end{equation}
+Thus we have proved that $||Tv^{\ast} - v^{\ast}|| < \epsilon$ for all $\epsilon > 0$, which implies that $||Tv^{\ast} - v^{\ast}|| = 0$. As $V$ is a normed vector space, this finally implies that $Tv^{\ast} = v^{\ast}$, thus completing the existence proof and also proving the second part of the theorem.
+\end{proof}
+
+\section{Solutions to selected exercises}
+\label{solution}
+
+\textbf{Exercise \ref{ex-MP-example}}
+\begin{solution}
+The transition probability matrix is given by:
+\[ \mathbf{P} \;\; = \;\;
+\begin{blockarray}{cccccccc}
+S1 & S2 & S3 & S4 & S5 & S6 & S7 \\
+\begin{block}{(ccccccc)c}
+  0.6  & 0.4 & 0   & 0   & 0   & 0   & 0   & S1 \\
+  0 .4 & 0.2 & 0.4 & 0   & 0   & 0   & 0   & S2 \\
+  0    & 0.4 & 0.2 & 0.4 & 0   & 0   & 0   & S3 \\
+  0    & 0   & 0   & 0.2 & 0.4 & 0   & 0   & S4 \\
+  0    & 0   & 0   & 0.4 & 0.2 & 0.4 & 0   & S5 \\
+  0    & 0   & 0   & 0   & 0.4 & 0.2 & 0.4 & S6 \\
+  0    & 0   & 0   & 0   & 0   & 0.4 & 0.6 & S7 \\
+\end{block}
+\end{blockarray}
+\]
+\end{solution}
+
+\textbf{Exercise \ref{ex-MRP-example}}
+\begin{solution}
+If the states are ordered as $\{S1,\;S2,\;S3,\;S4,\;S5,\;S6,\;S7\}$, the value function vector can be found by solving \eqref{eq:mrp_bellman_matrix}. The result is $V = [1.53,\; 0.37,\; 0.13,\; 0.22,\; 0.85,\; 3.59,\; 15.31]^T$.
+\end{solution}
+
+\textbf{Exercise \ref{ex-MDP-example}}
+\begin{solution}
+In both cases the value function of the policy is given by the vector $V^{\pi}=[1,\; 0,\; 0,\; 0,\; 0,\; 0,\; 10]^T$.
+\end{solution}
+
+\textbf{Exercise \ref{ex-number-policies}}
+\begin{solution}
+The agent has $2^7$ deterministic stationary policies available to it. When $\gamma < 1$, the optimal policy is  unique and the action in each state is to \textit{``try right''}. If $\gamma = 1$, the optimal policy is not unique. All policies lead to infinite reward and are hence optimal.
+\end{solution}
+
+\end{document}
