@@ -21,6 +21,7 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 # COURSE
 
 <h2><b> ♞ REINFORCEMENT LEARNING </b></h2>
+
 - [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf)
 - How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration
 - [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf)
