@@ -20,32 +20,20 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 
 # COURSE
 
-<h2><b> ♞ REPRESENTATION </b></h2>
-
-- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
-- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
-
-<h2><b> ♞ REPRESENTATION </b></h2>
-
-- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
-- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
-
-<h2><b> ♞ REPRESENTATION </b></h2>
-
-- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
-- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
-
-<h2><b> ♞ REPRESENTATION </b></h2>
-
-- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
-- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
-
-<h2><b> ♞ REPRESENTATION </b></h2>
-
-- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
-- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
-
-
+<h2><b> ♞ REINFORCEMENT LEARNING </b></h2>
+- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf)
+- How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration
+- [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf)
+- [Model-free learning to make good decisions. Q-learning. SARSA.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture3.pdf), [Model Free Control](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture4.pdf)
+- Scaling up: value function approximation. Deep Q Learning, [Value Function Approximation](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture5.pdf)
+- [Deep reinforcement learning continued](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture6.pdf)
+- [Imitation Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture7.pdf)
+- Policy Search, [Policy Gradient](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture8.pdf)
+- [Fast reinforcement learning (Exploration/Exploitation) Part I](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture11.pdf)
+- Fast reinforcement learning (Exploration/Exploitation) Part II
+- Batch Reinforcement Learning
+- [Monte Carlo Tree Search](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture14.pdf)
+- Human in the loop RL with a focus on transfer learnign
 
 The following guest lecture slides from last year's class offering may also help you in generating good project ideas. 
 - Cooperative Inverse Reinforcement Learning, Dylan Hadfield-Menell. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_cooperative_inverse_rl.pdf)
@@ -53,7 +41,7 @@ The following guest lecture slides from last year's class offering may also help
 - Reinforcement Learning – Policy Optimization Pieter Abbeel. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_policy_gradients.pdf)
 - Safe Reinforcement Learning, Philip S. Thomas. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_safe_rl.pdf)
 
-#### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf)
+#### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf), [Midterm review]()
 
 - [ICLR Result Reproducibility Challenge](https://www.cs.mcgill.ca/~jpineau/ICLR2018-ReproducibilityChallenge.html) | [Python Tutorial](http://cs231n.github.io/python-numpy-tutorial/)
 
