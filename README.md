@@ -14,11 +14,38 @@
 
 # [HOMEWORKS](https://github.com/SKKSaikia/CS234_RL/tree/master/hw)
 
-- [Homework 1](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment1/assignment1.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment1/assignment1_solution.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/hw/assignment1)
-- [Homework 2](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment2/assignment2.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment2/solution2.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/hw/assignment2)
-- [Homework 3](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment3/assignment3.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment3/assignment3_solution.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/hw/assignment3)
+- [Homework 1](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment1/assignment1.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment1/assignment1_solution.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/assignment1)
+- [Homework 2](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment2/assignment2.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment2/solution2.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/assignment2)
+- [Homework 3](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment3/assignment3.pdf) : [Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/hw/assignment3/assignment3_solution.pdf) | [Starter Code](https://github.com/SKKSaikia/CS234_RL/tree/master/assignment3)
 
 # COURSE
+
+<h2><b> ♞ REPRESENTATION </b></h2>
+
+- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
+- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
+
+<h2><b> ♞ REPRESENTATION </b></h2>
+
+- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
+- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
+
+<h2><b> ♞ REPRESENTATION </b></h2>
+
+- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
+- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
+
+<h2><b> ♞ REPRESENTATION </b></h2>
+
+- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
+- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
+
+<h2><b> ♞ REPRESENTATION </b></h2>
+
+- [Bayesian networks](https://ermongroup.github.io/cs228-notes/representation/directed/): Definitions. Representations via directed graphs. Independencies in directed models. <br/>
+- [Markov random fields](https://ermongroup.github.io/cs228-notes/representation/undirected/): Undirected vs directed models. Independencies in undirected models. Conditional random fields. <br/>
+
+
 
 The following guest lecture slides from last year's class offering may also help you in generating good project ideas. 
 - Cooperative Inverse Reinforcement Learning, Dylan Hadfield-Menell. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_cooperative_inverse_rl.pdf)
@@ -26,10 +53,10 @@ The following guest lecture slides from last year's class offering may also help
 - Reinforcement Learning – Policy Optimization Pieter Abbeel. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_policy_gradients.pdf)
 - Safe Reinforcement Learning, Philip S. Thomas. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_safe_rl.pdf)
 
-#### Exam : [2018 M](), [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](), [2017 Solution]()
+#### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf)
 
 - [ICLR Result Reproducibility Challenge](https://www.cs.mcgill.ca/~jpineau/ICLR2018-ReproducibilityChallenge.html) | []()
 
 # FINAL PROJECT | [Past Projects](http://web.stanford.edu/class/cs234/project.html)
 
-The list of exciting project in RL domain goes on. [Here](https://github.com/SKKSaikia/CS234_RL/tree/master/poster) are some of the project posters from past year and the [ICML template]() to be followed. Good projects are encouraged to be in the standards of [RLDM](http://rldm.org/), [AAMAS](http://www.aamas-conference.org/) etc. Deep Reinforcement Learning, is exciting. Here is my project called, " ".
+The list of exciting project in RL domain goes on. [Here](https://github.com/SKKSaikia/CS234_RL/tree/master/poster) are some of the project posters from past year and the [ICML template](https://github.com/SKKSaikia/CS234_RL/blob/master/icml2018_style.tar.gz) to be followed. Good projects are encouraged to be in the standards of [RLDM](http://rldm.org/), [AAMAS](http://www.aamas-conference.org/) etc. Deep Reinforcement Learning, is exciting. Here is my project called, " ".
