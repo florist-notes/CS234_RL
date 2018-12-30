@@ -7,6 +7,7 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 <b> Book: </b>
 - [Reinforcement Learning: An Introduction](https://github.com/SKKSaikia/CS234_RL/blob/master/doc/SuttonBartoIPRLBook2ndEd.pdf), Sutton and Barto, 2nd Edition.
 - [Reinforcement Learning: State-of-the-Art](https://github.com/SKKSaikia/CS234_RL/blob/master/doc/RL.pdf), Marco Wiering and Martijn van Otterlo, Eds.
+- [Linear Algebra Review](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/cs229-linalg.pdf) | [Probability Review](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/cs229-prob.pdf)
 
 <b> Grade : </b> Assignment 1 (10%) + Assignment 2 (20%) + Assignment 3 (15%) + Midterm (25%) + Quiz(5%) + Final Proejct (25%)
 
@@ -22,19 +23,19 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 
 <h2><b> ♞ REINFORCEMENT LEARNING </b></h2>
 
-- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf)
-- How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration
-- [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf)
-- [Model-free learning to make good decisions. Q-learning. SARSA.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture3.pdf), [Model Free Control](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture4.pdf)
-- Scaling up: value function approximation. Deep Q Learning, [Value Function Approximation](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture5.pdf)
-- [Deep reinforcement learning continued](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture6.pdf)
-- [Imitation Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture7.pdf)
-- Policy Search, [Policy Gradient](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture8.pdf)
-- [Fast reinforcement learning (Exploration/Exploitation) Part I](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture11.pdf)
-- Fast reinforcement learning (Exploration/Exploitation) Part II
-- Batch Reinforcement Learning
-- [Monte Carlo Tree Search](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture14.pdf)
-- Human in the loop RL with a focus on transfer learnign
+- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l1.pdf)]
+- How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l2.pdf)]
+- [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l3.pdf)]
+- [Model-free learning to make good decisions. Q-learning. SARSA.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture3.pdf), [Model Free Control](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture4.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l4.pdf)]
+- Scaling up: value function approximation. Deep Q Learning, [Value Function Approximation](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture5.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l5.pdf)]
+- [Deep reinforcement learning continued](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture6.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l6.pdf)]
+- [Imitation Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture7.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l7_annotated.pdf)]
+- Policy Search, [Policy Gradient](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture8.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l8.pdf)]
+- [Fast reinforcement learning (Exploration/Exploitation) Part I](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture11.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l9_updated.pdf)]
+- Fast reinforcement learning (Exploration/Exploitation) Part II [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l11.pdf)]
+- Batch Reinforcement Learning [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l12.pdf)]
+- [Monte Carlo Tree Search](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture14.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l13.pdf)]
+- Human in the loop RL with a focus on transfer learnign [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l14.pdf)]
 
 The following guest lecture slides from last year's class offering may also help you in generating good project ideas. 
 - Cooperative Inverse Reinforcement Learning, Dylan Hadfield-Menell. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_cooperative_inverse_rl.pdf)
@@ -42,7 +43,7 @@ The following guest lecture slides from last year's class offering may also help
 - Reinforcement Learning – Policy Optimization Pieter Abbeel. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_policy_gradients.pdf)
 - Safe Reinforcement Learning, Philip S. Thomas. [Slides](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_guest_lecture_safe_rl.pdf)
 
-#### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf), [Midterm review]()
+#### Exam : [2018 Midterm Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/2017-18_mid.pdf), [2017 M](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017.pdf), [2017 Solution](https://github.com/SKKSaikia/CS234_RL/blob/master/exam/cs234-midterm-2017-soln.pdf), [Midterm review](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_midterm_review.pdf)
 
 - [ICLR Result Reproducibility Challenge](https://www.cs.mcgill.ca/~jpineau/ICLR2018-ReproducibilityChallenge.html) | [Python Tutorial](http://cs231n.github.io/python-numpy-tutorial/)
 
