@@ -23,7 +23,7 @@ OpenAI beating pro Dota players, Deepmind beating professional Go players is ama
 
 <h2><b> ♞ REINFORCEMENT LEARNING </b></h2> SB (Sutton and Barton) Chapters : SBC
 
-- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l1.pdf)] SBC1
+- [Introduction to Reinforcement Learning](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture1.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l1.pdf)] SBC 1
 - How to act given know how the world works. Tabular setting. Markov processes. Policy search. Policy iteration. Value iteration [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l2.pdf)] SBC 3, 4.1-4.4
 - [Learning to evaluate a policy when don't know how the world works.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture2.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l3.pdf)] SBC 5.1, 5.5, 6.1-6.3
 - [Model-free learning to make good decisions. Q-learning. SARSA.](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture3.pdf), [Model Free Control](https://github.com/SKKSaikia/CS234_RL/blob/master/lectures/lecture4.pdf) [[Slide](https://github.com/SKKSaikia/CS234_RL/blob/master/slides/cs234_2018_l4.pdf)] SBC 5.2, 5.4, 6.4-6.5, 6.7
