@@ -55,7 +55,7 @@ The following guest lecture slides from last year's class offering may also help
 
 - [ICLR Result Reproducibility Challenge](https://www.cs.mcgill.ca/~jpineau/ICLR2018-ReproducibilityChallenge.html) | [Python Tutorial](http://cs231n.github.io/python-numpy-tutorial/) | [OpenAI](https://openai.com/) | [Deep Reinforcement Learning](https://arxiv.org/abs/1810.06339) | [An introduction to Reinforcement Learning](https://medium.freecodecamp.org/an-introduction-to-reinforcement-learning-4339519de419) | [Deep Reinforcement Learning Udacity](https://github.com/SKKSaikia/DeepRLNanoD) | [DeepMind : Advanced Deep Learning & Reinforcement](https://www.youtube.com/watch?v=iOh7QUZGyiU&list=PLqYmG7hTraZDNJre23vqCGIVpfZ_K2RZs) | [DeepMind : Introduction to Reinforcement Learning](https://www.youtube.com/watch?v=2pWv7GOvuf0&list=PLqYmG7hTraZDM-OYHWgPebj2MfCFzFObQ) | [DeepMind](https://deepmind.com/) | [awesome-rl](https://github.com/aikorea/awesome-rl) 
 
-- [Stanford Seminar - Human in the Loop Reinforcement Learning](https://youtu.be/nj5t1Q_ANlw) | [CS231n Lecture 14 | Deep Reinforcement Learning](https://youtu.be/lvoHnicueoE) | [60 Days of RL Challenge](https://github.com/andri27-ts/60_Days_RL_Challenge) 
+- [Stanford Seminar - Human in the Loop Reinforcement Learning](https://youtu.be/nj5t1Q_ANlw) | [CS231n Lecture 14 | Deep Reinforcement Learning](https://youtu.be/lvoHnicueoE) | [60 Days of RL Challenge](https://github.com/andri27-ts/60_Days_RL_Challenge) | [Udacity DRL Nanodegree](https://github.com/udacity/deep-reinforcement-learning) | [Deep RL Udacity ND Skk](https://github.com/SKKSaikia/DeepRLNanoD)
 
 # FINAL PROJECT | [Past Projects](http://web.stanford.edu/class/cs234/project.html)
 
