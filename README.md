@@ -2,7 +2,7 @@
 
 # [CS234 : Reinforcememnt Learning](http://web.stanford.edu/class/cs234/index.html)
 
-OpenAI beating pro Dota players, Deepmind beating professional Go players is amazing. DRL (Deep Reinforcement Learning) is the next hot shot and I sure want to know RL. This is exciting , [here's](https://mvideos.stanford.edu/Preview/LoadPreview/253#) the complete first lecture, this is going to be so much fun. Keeping the Honor Code, let's dive deep into Reinforcement Learning.
+OpenAI beating pro Dota players, Deepmind beating professional Go players is amazing. Meta Reinforcement Learning (Deep Reinforcement Learning) is the next hot shot and I sure want to know RL in and out. This is exciting , [here's](https://mvideos.stanford.edu/Preview/LoadPreview/253#) the complete first lecture, this is going to be so much fun. Keeping the Honor Code, let's dive deep into Reinforcement Learning.
 
 Update : The Complete Lectures are in this [Playlist](https://www.youtube.com/watch?v=FgzM3zpZ55o&list=PLoROMvodv4rOSOPzutgyCTapiGlY2Nd8u)
 
